@@ -41,6 +41,22 @@
                 android:layout_height="36dp"
                 android:text="发现 Wi‑Fi Direct 设备" />
 
+            <Button
+                android:id="@+id/button_export_backup"
+                style="@style/RainNoteButtonSoft"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:text="导出备份" />
+
+            <Button
+                android:id="@+id/button_import_backup"
+                style="@style/RainNoteButtonSoft"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="8dp"
+                android:text="导入备份" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerview_wifi_peers"
                 android:layout_width="match_parent"

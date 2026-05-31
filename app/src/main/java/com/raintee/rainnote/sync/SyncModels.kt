@@ -24,5 +24,6 @@ data class PendingSyncNote(
     val id: String,
     val title: String,
     val cardCount: Int,
-    val blockCount: Int
+    val blockCount: Int,
+    val charCount: Int
 )

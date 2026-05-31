@@ -8,6 +8,7 @@ import com.raintee.rainnote.data.NoteCard
 import com.raintee.rainnote.debug.AppLog
 import com.raintee.rainnote.data.NoteRepository
 import org.json.JSONObject
+import org.json.JSONArray
 
 class SyncManager(context: Context) {
 
@@ -63,6 +64,7 @@ class SyncManager(context: Context) {
         val blocks = root.optJSONArray("blocks")
         val cardCountByNote = mutableMapOf<String, Int>()
         val blockCountByNote = mutableMapOf<String, Int>()
+        val charCountByNote = mutableMapOf<String, Int>()
         for (index in 0 until (cards?.length() ?: 0)) {
             val item = cards!!.getJSONObject(index)
             val noteId = item.optString("noteId")
@@ -72,6 +74,7 @@ class SyncManager(context: Context) {
             val item = blocks!!.getJSONObject(index)
             val noteId = item.optString("noteId")
             blockCountByNote[noteId] = (blockCountByNote[noteId] ?: 0) + 1
+            charCountByNote[noteId] = (charCountByNote[noteId] ?: 0) + item.optString("content").length
         }
         val notes = root.optJSONArray("notes") ?: return emptyList()
         return buildList {
@@ -83,11 +86,21 @@ class SyncManager(context: Context) {
                         id = id,
                         title = item.optString("title", "未命名便签"),
                         cardCount = cardCountByNote[id] ?: 0,
-                        blockCount = blockCountByNote[id] ?: 0
+                        blockCount = blockCountByNote[id] ?: 0,
+                        charCount = charCountByNote[id] ?: 0
                     )
                 )
             }
         }
+    }
+
+    fun exportBackupJson(): String = payloadToJson(buildLocalPayload()).toString(2)
+
+    fun loadPendingPayload(json: String): Int {
+        pendingPayload = JSONObject(json)
+        val count = pendingNotes().size
+        AppLog.d("SyncManager", "loaded backup payload pendingNotes=$count")
+        return count
     }
 
     fun acceptPendingNotes(noteIds: Set<String>): Int {
@@ -182,5 +195,40 @@ class SyncManager(context: Context) {
             )
         }
         AppLog.d("SyncManager", "applyPayloadJson finished notes=${notes?.length() ?: 0} cards=${cards?.length() ?: 0} blocks=${blocks?.length() ?: 0}")
+    }
+
+    private fun payloadToJson(payload: SyncPayload): JSONObject {
+        return JSONObject()
+            .put("deviceId", payload.deviceId)
+            .put("timestamp", payload.timestamp)
+            .put("notes", JSONArray(payload.notes.map { note ->
+                JSONObject()
+                    .put("id", note.id)
+                    .put("title", note.title)
+                    .put("createdAt", note.createdAt)
+                    .put("updatedAt", note.updatedAt)
+                    .put("version", note.version)
+            }))
+            .put("cards", JSONArray(payload.cards.map { card ->
+                JSONObject()
+                    .put("id", card.id)
+                    .put("noteId", card.noteId)
+                    .put("title", card.title)
+                    .put("sortOrder", card.sortOrder)
+                    .put("createdAt", card.createdAt)
+                    .put("updatedAt", card.updatedAt)
+            }))
+            .put("blocks", JSONArray(payload.blocks.map { block ->
+                JSONObject()
+                    .put("id", block.id)
+                    .put("noteId", block.noteId)
+                    .put("cardId", block.cardId)
+                    .put("type", block.type.storageName)
+                    .put("content", block.content)
+                    .put("sortOrder", block.sortOrder)
+                    .put("createdAt", block.createdAt)
+                    .put("updatedAt", block.updatedAt)
+            }))
+            .put("deletedIds", JSONArray(payload.deletedIds))
     }
 }

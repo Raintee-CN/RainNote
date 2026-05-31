@@ -52,6 +52,16 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
         _text.value = buildText() + "\n\n$message"
     }
 
+    fun exportBackupJson(): String = syncManager.exportBackupJson()
+
+    fun loadBackupJson(json: String) {
+        val count = syncManager.loadPendingPayload(json)
+        _pendingNotes.value = syncManager.pendingNotes()
+        val message = "已解析备份文件，待确认 $count 个便签。"
+        _prompt.value = message
+        _text.value = buildText() + "\n\n$message"
+    }
+
     private fun buildText(): String {
         val payload = syncManager.buildLocalPayload()
         return """

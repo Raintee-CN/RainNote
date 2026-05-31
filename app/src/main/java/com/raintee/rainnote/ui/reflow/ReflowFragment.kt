@@ -2,6 +2,7 @@ package com.raintee.rainnote.ui.reflow
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
@@ -28,6 +30,12 @@ class ReflowFragment : Fragment() {
     private lateinit var viewModel: ReflowViewModel
     private lateinit var adapter: WifiPeerAdapter
     private lateinit var pendingAdapter: PendingNoteAdapter
+    private val exportBackup = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) writeBackup(uri)
+    }
+    private val importBackup = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) readBackup(uri)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[ReflowViewModel::class.java]
@@ -42,6 +50,8 @@ class ReflowFragment : Fragment() {
             requestWifiPermissionsIfNeeded()
             viewModel.refresh()
         }
+        binding.buttonExportBackup.setOnClickListener { exportBackup.launch("rainnote-backup.json") }
+        binding.buttonImportBackup.setOnClickListener { importBackup.launch(arrayOf("application/json", "text/*", "*/*")) }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
         viewModel.prompt.observe(viewLifecycleOwner) { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
         viewModel.peers.observe(viewLifecycleOwner) { adapter.submitList(it) }
@@ -60,6 +70,18 @@ class ReflowFragment : Fragment() {
             ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }
         if (permissions.isNotEmpty()) requestPermissions(permissions.toTypedArray(), 1002)
+    }
+
+    private fun writeBackup(uri: Uri) {
+        requireContext().contentResolver.openOutputStream(uri)?.use { output ->
+            output.write(viewModel.exportBackupJson().toByteArray(Charsets.UTF_8))
+        }
+        Toast.makeText(requireContext(), "备份已导出", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun readBackup(uri: Uri) {
+        val json = requireContext().contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+        viewModel.loadBackupJson(json)
     }
 
     override fun onDestroyView() {
@@ -117,7 +139,7 @@ private class PendingNoteViewHolder(
     private val onClick: (PendingSyncNote) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(note: PendingSyncNote, selected: Boolean) {
-        binding.textPendingNote.text = "${note.title}\n卡片 ${note.cardCount} 张，行块 ${note.blockCount} 个"
+        binding.textPendingNote.text = "${note.title}\n卡片 ${note.cardCount} 张，行块 ${note.blockCount} 个，字符 ${note.charCount} 个"
         binding.textPendingNote.isChecked = selected
         binding.root.setOnClickListener { onClick(note) }
     }
