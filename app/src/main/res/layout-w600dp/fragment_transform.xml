@@ -41,6 +41,22 @@
                 android:text="新建便签" />
         </LinearLayout>
 
+        <EditText
+            android:id="@+id/edit_search_notes"
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/bg_button_soft"
+            android:hint="搜索便签"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:singleLine="true"
+            android:textColor="@color/rn_text"
+            android:textColorHint="@color/rn_text_muted"
+            android:textSize="14sp" />
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview_transform"
             android:layout_width="match_parent"

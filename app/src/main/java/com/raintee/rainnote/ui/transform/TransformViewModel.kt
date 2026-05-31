@@ -71,6 +71,12 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         refresh(card.noteId)
     }
 
+    fun reorderCards(orderedCardIds: List<String>) {
+        val note = _state.value?.selectedNote ?: return
+        repository.reorderCards(note.id, orderedCardIds)
+        refresh(note.id)
+    }
+
     fun updateBlock(block: NoteBlock, content: String) {
         repository.saveBlock(block.copy(content = content))
     }
@@ -111,6 +117,25 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         val latestBlock = latestBlocks.firstOrNull { it.id == block.id } ?: block
         repository.deleteBlock(latestBlocks, latestBlock)
         refresh(block.noteId)
+    }
+
+    fun moveBlock(block: NoteBlock, direction: Int) {
+        val latestBlocks = repository.getBlocks(block.cardId)
+        val from = latestBlocks.indexOfFirst { it.id == block.id }
+        val to = (from + direction).coerceIn(0, latestBlocks.lastIndex)
+        if (from == -1 || from == to) return
+        val moved = latestBlocks.toMutableList()
+        val item = moved.removeAt(from)
+        moved.add(to, item)
+        repository.reorderBlocks(block.cardId, moved.map { it.id })
+        refresh(block.noteId)
+    }
+
+    fun appendMarkdown(block: NoteBlock, snippet: String) {
+        val latest = repository.getBlocks(block.cardId).firstOrNull { it.id == block.id } ?: block
+        val separator = if (latest.content.isBlank()) "" else "\n"
+        repository.saveBlock(latest.copy(type = BlockType.RichText, content = latest.content + separator + snippet))
+        refresh(latest.noteId)
     }
 
     fun deleteSelectedNote() {

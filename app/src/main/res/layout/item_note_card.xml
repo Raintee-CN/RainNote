@@ -9,20 +9,37 @@
     android:orientation="vertical"
     android:padding="10dp">
 
-    <EditText
-        android:id="@+id/edit_card_title"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:hint="卡片标题"
-        android:inputType="textCapSentences"
-        android:minHeight="34dp"
-        android:singleLine="true"
-        android:textColor="@color/rn_text"
-        android:textColorHint="@color/rn_text_muted"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        tools:text="灵感" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/edit_card_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:hint="卡片标题"
+            android:inputType="textCapSentences"
+            android:minHeight="34dp"
+            android:singleLine="true"
+            android:textColor="@color/rn_text"
+            android:textColorHint="@color/rn_text_muted"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:text="灵感" />
+
+        <TextView
+            android:id="@+id/text_drag_handle"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="↕"
+            android:textColor="@color/rn_text_muted"
+            android:textSize="16sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/block_container"

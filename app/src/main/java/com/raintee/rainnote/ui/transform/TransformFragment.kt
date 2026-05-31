@@ -15,6 +15,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -34,10 +35,12 @@ class TransformFragment : Fragment() {
     private lateinit var viewModel: TransformViewModel
     private lateinit var noteAdapter: NoteAdapter
     private lateinit var cardAdapter: CardAdapter
+    private lateinit var cardTouchHelper: ItemTouchHelper
     private var titleWatcher: TextWatcher? = null
     private var pendingFocusBlockId: String? = null
     private var pendingFocusCardId: String? = null
     private var bindingTitle = false
+    private var allNotes: List<Note> = emptyList()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[TransformViewModel::class.java]
@@ -50,10 +53,13 @@ class TransformFragment : Fragment() {
         cardAdapter = CardAdapter(
             onCardTitleChanged = viewModel::updateCardTitle,
             onCardLongPressed = ::showCardMenu,
+            onCardDragStarted = { holder -> cardTouchHelper.startDrag(holder) },
             onAddRowClicked = { card -> pendingFocusBlockId = viewModel.appendBlock(card) },
             onContentChanged = viewModel::updateBlock,
             onTypeClicked = ::showTypeMenu,
-            onDeleteClicked = viewModel::deleteBlock,
+            onDeleteClicked = ::confirmDeleteBlock,
+            onMoveClicked = viewModel::moveBlock,
+            onMarkdownClicked = viewModel::appendMarkdown,
             onEnterPressed = { block -> pendingFocusBlockId = viewModel.insertBlockAfter(block) }
         )
 
@@ -61,16 +67,21 @@ class TransformFragment : Fragment() {
         binding.recyclerviewTransform.adapter = noteAdapter
         binding.recyclerviewBlocks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewBlocks.adapter = cardAdapter
+        cardTouchHelper = ItemTouchHelper(CardMoveCallback(
+            onMove = { from, to -> cardAdapter.moveItem(from, to) },
+            onMoveFinished = { viewModel.reorderCards(cardAdapter.currentCardIds()) }
+        ))
+        cardTouchHelper.attachToRecyclerView(binding.recyclerviewBlocks)
 
         binding.buttonAddNote.setOnClickListener { showCreateNoteDialog() }
         binding.buttonAddBlock.setOnClickListener { showCreateCardDialog() }
         binding.buttonDeleteNote.setOnClickListener {
-            viewModel.deleteSelectedNote()
-            if (!isWideLayout()) showListPanel()
+            confirmDeleteNote()
         }
         binding.editNoteTitle.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) viewModel.refreshSelected()
         }
+        binding.editSearchNotes.doAfterTextChanged { applyNoteFilter() }
         binding.buttonBackToList.setOnClickListener { showListPanel() }
         if (isWideLayout()) showEditorPanel() else showListPanel()
 
@@ -80,7 +91,8 @@ class TransformFragment : Fragment() {
 
     private fun render(state: NoteEditorState) {
         noteAdapter.selectedId = state.selectedNote?.id
-        noteAdapter.submitList(state.notes)
+        allNotes = state.notes
+        applyNoteFilter()
         cardAdapter.focusBlockId = pendingFocusBlockId
         cardAdapter.focusCardId = pendingFocusCardId
         cardAdapter.submitList(state.cards) {
@@ -102,6 +114,16 @@ class TransformFragment : Fragment() {
                 viewModel.updateTitle(text.toString())
             }
         }
+    }
+
+    private fun applyNoteFilter() {
+        val keyword = binding.editSearchNotes.text.toString().trim()
+        val filtered = if (keyword.isEmpty()) {
+            allNotes
+        } else {
+            allNotes.filter { it.title.contains(keyword, ignoreCase = true) }
+        }
+        noteAdapter.submitList(filtered)
     }
 
     private fun showCreateNoteDialog() {
@@ -135,10 +157,39 @@ class TransformFragment : Fragment() {
         PopupMenu(requireContext(), anchor).apply {
             menu.add(0, 0, 0, "删除这张卡片")
             setOnMenuItemClickListener {
-                viewModel.deleteCard(card)
+                confirmDeleteCard(card)
                 true
             }
         }.show()
+    }
+
+    private fun confirmDeleteNote() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("删除当前便签？")
+            .setMessage("便签内的所有卡片和行块都会删除。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("删除") { _, _ ->
+                viewModel.deleteSelectedNote()
+                if (!isWideLayout()) showListPanel()
+            }
+            .show()
+    }
+
+    private fun confirmDeleteCard(card: NoteCard) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("删除卡片？")
+            .setMessage("卡片内的所有行块都会删除。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("删除") { _, _ -> viewModel.deleteCard(card) }
+            .show()
+    }
+
+    private fun confirmDeleteBlock(block: NoteBlock) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("删除这一行？")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("删除") { _, _ -> viewModel.deleteBlock(block) }
+            .show()
     }
 
     private fun showTypeMenu(block: NoteBlock, anchor: View) {
@@ -204,10 +255,13 @@ private object NoteDiff : DiffUtil.ItemCallback<Note>() {
 private class CardAdapter(
     private val onCardTitleChanged: (NoteCard, String) -> Unit,
     private val onCardLongPressed: (NoteCard, View) -> Unit,
+    private val onCardDragStarted: (RecyclerView.ViewHolder) -> Unit,
     private val onAddRowClicked: (NoteCard) -> Unit,
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
+    private val onMoveClicked: (NoteBlock, Int) -> Unit,
+    private val onMarkdownClicked: (NoteBlock, String) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
 ) : ListAdapter<CardEditorItem, CardViewHolder>(CardDiff) {
     var focusBlockId: String? = null
@@ -218,10 +272,13 @@ private class CardAdapter(
             ItemNoteCardBinding.inflate(LayoutInflater.from(parent.context), parent, false),
             onCardTitleChanged,
             onCardLongPressed,
+            onCardDragStarted,
             onAddRowClicked,
             onContentChanged,
             onTypeClicked,
             onDeleteClicked,
+            onMoveClicked,
+            onMarkdownClicked,
             onEnterPressed
         )
     }
@@ -230,16 +287,30 @@ private class CardAdapter(
         val item = getItem(position)
         holder.bind(item, focusCardId == item.card.id, focusBlockId)
     }
+
+    fun moveItem(from: Int, to: Int): Boolean {
+        if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+        val moved = currentList.toMutableList()
+        val item = moved.removeAt(from)
+        moved.add(to, item)
+        submitList(moved)
+        return true
+    }
+
+    fun currentCardIds(): List<String> = currentList.map { it.card.id }
 }
 
 private class CardViewHolder(
     private val binding: ItemNoteCardBinding,
     private val onCardTitleChanged: (NoteCard, String) -> Unit,
     private val onCardLongPressed: (NoteCard, View) -> Unit,
+    private val onCardDragStarted: (RecyclerView.ViewHolder) -> Unit,
     private val onAddRowClicked: (NoteCard) -> Unit,
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
+    private val onMoveClicked: (NoteBlock, Int) -> Unit,
+    private val onMarkdownClicked: (NoteBlock, String) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
     private var titleWatcher: TextWatcher? = null
@@ -254,6 +325,10 @@ private class CardViewHolder(
         }
         binding.root.setOnLongClickListener {
             onCardLongPressed(item.card, it)
+            true
+        }
+        binding.textDragHandle.setOnLongClickListener {
+            onCardDragStarted(this)
             true
         }
         binding.buttonAddRow.setOnClickListener { onAddRowClicked(item.card) }
@@ -307,11 +382,19 @@ private class CardViewHolder(
     private fun showBlockMenu(block: NoteBlock, anchor: View) {
         PopupMenu(anchor.context, anchor).apply {
             menu.add(0, 0, 0, "切换类型")
-            menu.add(0, 1, 1, "删除这一行")
+            menu.add(0, 1, 1, "上移")
+            menu.add(0, 2, 2, "下移")
+            menu.add(0, 3, 3, "插入加粗")
+            menu.add(0, 4, 4, "插入列表")
+            menu.add(0, 5, 5, "删除这一行")
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     0 -> onTypeClicked(block, anchor)
-                    1 -> onDeleteClicked(block)
+                    1 -> onMoveClicked(block, -1)
+                    2 -> onMoveClicked(block, 1)
+                    3 -> onMarkdownClicked(block, "**加粗内容**")
+                    4 -> onMarkdownClicked(block, "- 列表项")
+                    5 -> onDeleteClicked(block)
                 }
                 true
             }
@@ -347,4 +430,28 @@ private class CardViewHolder(
 private object CardDiff : DiffUtil.ItemCallback<CardEditorItem>() {
     override fun areItemsTheSame(oldItem: CardEditorItem, newItem: CardEditorItem) = oldItem.card.id == newItem.card.id
     override fun areContentsTheSame(oldItem: CardEditorItem, newItem: CardEditorItem) = oldItem == newItem
+}
+
+private class CardMoveCallback(
+    private val onMove: (Int, Int) -> Boolean,
+    private val onMoveFinished: () -> Unit
+) : ItemTouchHelper.Callback() {
+    override fun getMovementFlags(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
+        return makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0)
+    }
+
+    override fun onMove(
+        recyclerView: RecyclerView,
+        viewHolder: RecyclerView.ViewHolder,
+        target: RecyclerView.ViewHolder
+    ): Boolean = onMove(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
+
+    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+    override fun isLongPressDragEnabled(): Boolean = false
+
+    override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+        super.clearView(recyclerView, viewHolder)
+        onMoveFinished()
+    }
 }

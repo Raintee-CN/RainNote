@@ -93,12 +93,28 @@ class NoteRepository(context: Context) {
         }
     }
 
+    fun reorderBlocks(cardId: String, orderedBlockIds: List<String>) {
+        val blocksById = database.getBlocks(cardId).associateBy { it.id }
+        orderedBlockIds.forEachIndexed { index, blockId ->
+            val block = blocksById[blockId] ?: return@forEachIndexed
+            database.upsertBlock(block.copy(sortOrder = index, updatedAt = System.currentTimeMillis()))
+        }
+    }
+
     fun deleteCard(noteId: String, cardId: String) {
         val cards = database.getCards(noteId)
         if (cards.size <= 1) return
         database.softDeleteCard(cardId, System.currentTimeMillis())
         cards.filterNot { it.id == cardId }.forEachIndexed { index, remaining ->
             database.upsertCard(remaining.copy(sortOrder = index))
+        }
+    }
+
+    fun reorderCards(noteId: String, orderedCardIds: List<String>) {
+        val cardsById = database.getCards(noteId).associateBy { it.id }
+        orderedCardIds.forEachIndexed { index, cardId ->
+            val card = cardsById[cardId] ?: return@forEachIndexed
+            database.upsertCard(card.copy(sortOrder = index, updatedAt = System.currentTimeMillis()))
         }
     }
 
