@@ -41,6 +41,18 @@ class NoteRepository(context: Context) {
         return updated
     }
 
+    fun upsertRemoteNote(note: Note) {
+        database.upsertNote(note)
+    }
+
+    fun upsertRemoteCard(card: NoteCard) {
+        database.upsertCard(card)
+    }
+
+    fun upsertRemoteBlock(block: NoteBlock) {
+        database.upsertBlock(block)
+    }
+
     fun createCard(noteId: String, title: String): NoteCard {
         val now = System.currentTimeMillis()
         val card = NoteCard(

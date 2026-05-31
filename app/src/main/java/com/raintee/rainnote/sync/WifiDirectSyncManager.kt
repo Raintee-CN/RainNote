@@ -61,6 +61,8 @@ class WifiDirectSyncManager(context: Context) {
         receiver = null
     }
 
+    fun currentPeers(): List<WifiDirectPeer> = peers
+
     @SuppressLint("MissingPermission")
     fun connect(peer: WifiDirectPeer, onConnected: (WifiP2pInfo) -> Unit = {}) {
         val p2pManager = manager ?: return
@@ -89,14 +91,18 @@ class WifiDirectSyncManager(context: Context) {
         }
     }
 
-    fun receivePayloadOnce(port: Int = SYNC_PORT, onPayload: (String) -> Unit) {
+    fun receivePayloadOnce(port: Int = SYNC_PORT, onPayload: (String) -> Unit, onError: (Throwable) -> Unit = {}) {
         Thread {
-            ServerSocket(port).use { server ->
-                val socket = server.accept()
-                socket.use {
-                    val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
-                    onPayload(text)
+            try {
+                ServerSocket(port).use { server ->
+                    val socket = server.accept()
+                    socket.use {
+                        val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
+                        onPayload(text)
+                    }
                 }
+            } catch (error: Throwable) {
+                onError(error)
             }
         }.start()
     }
@@ -175,7 +181,17 @@ class WifiDirectSyncManager(context: Context) {
             .put("timestamp", timestamp)
             .put("notes", JSONArray(notes.map { JSONObject().put("id", it.id).put("title", it.title).put("updatedAt", it.updatedAt) }))
             .put("cards", JSONArray(cards.map { JSONObject().put("id", it.id).put("noteId", it.noteId).put("title", it.title).put("sortOrder", it.sortOrder) }))
-            .put("blocks", JSONArray(blocks.map { JSONObject().put("id", it.id).put("cardId", it.cardId).put("type", it.type.storageName).put("content", it.content).put("sortOrder", it.sortOrder) }))
+            .put("blocks", JSONArray(blocks.map {
+                JSONObject()
+                    .put("id", it.id)
+                    .put("noteId", it.noteId)
+                    .put("cardId", it.cardId)
+                    .put("type", it.type.storageName)
+                    .put("content", it.content)
+                    .put("sortOrder", it.sortOrder)
+                    .put("createdAt", it.createdAt)
+                    .put("updatedAt", it.updatedAt)
+            }))
     }
 
     companion object {
