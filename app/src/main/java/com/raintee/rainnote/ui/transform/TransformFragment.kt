@@ -66,6 +66,9 @@ class TransformFragment : Fragment() {
             viewModel.deleteSelectedNote()
             if (!isWideLayout()) showListPanel()
         }
+        binding.editNoteTitle.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) viewModel.refreshSelected()
+        }
         binding.buttonBackToList.setOnClickListener { showListPanel() }
         if (isWideLayout()) showEditorPanel() else showListPanel()
 

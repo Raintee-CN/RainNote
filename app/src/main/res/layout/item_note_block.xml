@@ -3,41 +3,41 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="6dp"
-    android:layout_marginBottom="6dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
     android:background="@drawable/bg_block_row"
     android:gravity="top"
     android:orientation="horizontal"
-    android:paddingStart="10dp"
-    android:paddingEnd="10dp"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
 
     <TextView
         android:id="@+id/text_block_type"
-        android:layout_width="56dp"
+        android:layout_width="46dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_button_soft"
-        android:minHeight="44dp"
+        android:minHeight="32dp"
         android:gravity="center"
         android:text="文本"
         android:textAllCaps="false"
         android:textColor="@color/rn_primary_dark"
-        android:textSize="12sp"
+        android:textSize="11sp"
         tools:text="文本" />
 
     <EditText
         android:id="@+id/edit_block_content"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="6dp"
         android:layout_weight="1"
         android:background="@android:color/transparent"
         android:gravity="top|start"
         android:hint="输入内容"
-        android:minHeight="44dp"
+        android:minHeight="34dp"
         android:textColor="@color/rn_text"
         android:textColorHint="@color/rn_text_muted"
-        android:textSize="16sp"
+        android:textSize="15sp"
         tools:text="长按这一行可切换类型或删除" />
 </LinearLayout>

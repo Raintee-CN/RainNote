@@ -46,52 +46,51 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateTitle(title: String) {
         val note = _state.value?.selectedNote ?: return
-        val updated = repository.updateNoteTitle(note, title)
-        val current = _state.value ?: return
-        _state.value = current.copy(
-            selectedNote = updated,
-            notes = current.notes.map { if (it.id == updated.id) updated else it }
-        )
+        repository.updateNoteTitle(note, title)
     }
 
     fun updateBlock(block: NoteBlock, content: String) {
-        val updated = block.copy(content = content)
-        repository.saveBlock(updated)
-        val current = _state.value ?: return
-        _state.value = current.copy(blocks = current.blocks.map { if (it.id == block.id) updated else it })
+        repository.saveBlock(block.copy(content = content))
+    }
+
+    fun refreshSelected() {
+        refresh(_state.value?.selectedNote?.id)
     }
 
     fun setBlockType(block: NoteBlock, type: BlockType): String {
-        val updated = block.copy(type = type)
+        val latest = repository.getBlocks(block.noteId).firstOrNull { it.id == block.id } ?: block
+        val updated = latest.copy(type = type)
         repository.saveBlock(updated)
-        val current = _state.value ?: return block.id
-        _state.value = current.copy(blocks = current.blocks.map { if (it.id == block.id) updated else it })
+        val current = _state.value ?: return updated.id
+        _state.value = current.copy(blocks = repository.getBlocks(updated.noteId))
         return block.id
     }
 
     fun appendBlock(): String? {
         val state = _state.value ?: return null
         val note = state.selectedNote ?: return null
-        val lastBlock = state.blocks.lastOrNull()
+        val latestBlocks = repository.getBlocks(note.id)
+        val lastBlock = latestBlocks.lastOrNull()
         val inserted = if (lastBlock == null) {
             repository.insertBlockAfter(note.id, emptyList(), "")
         } else {
-            repository.insertBlockAfter(note.id, state.blocks, lastBlock.id)
+            repository.insertBlockAfter(note.id, latestBlocks, lastBlock.id)
         }
         refresh(note.id)
         return inserted.id
     }
 
     fun insertBlockAfter(block: NoteBlock): String? {
-        val state = _state.value ?: return null
-        val inserted = repository.insertBlockAfter(block.noteId, state.blocks, block.id)
+        val latestBlocks = repository.getBlocks(block.noteId)
+        val inserted = repository.insertBlockAfter(block.noteId, latestBlocks, block.id)
         refresh(block.noteId)
         return inserted.id
     }
 
     fun deleteBlock(block: NoteBlock) {
-        val state = _state.value ?: return
-        repository.deleteBlock(state.blocks, block)
+        val latestBlocks = repository.getBlocks(block.noteId)
+        val latestBlock = latestBlocks.firstOrNull { it.id == block.id } ?: block
+        repository.deleteBlock(latestBlocks, latestBlock)
         refresh(block.noteId)
     }
 

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_rainnote_root"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="10dp"
     tools:context=".ui.transform.TransformFragment">
 
     <LinearLayout
@@ -25,7 +25,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:paddingStart="18dp"
+                android:paddingStart="14dp"
                 android:text="我的便签"
                 android:textColor="@color/rn_text"
                 android:textAppearance="?attr/textAppearanceHeadline6" />
@@ -34,11 +34,11 @@
                 android:id="@+id/button_add_note"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="10dp"
+                android:layout_margin="8dp"
                 android:background="@drawable/bg_button_primary"
-                android:minHeight="44dp"
-                android:paddingStart="18dp"
-                android:paddingEnd="18dp"
+                android:minHeight="36dp"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
                 android:text="新建"
                 android:textAllCaps="false"
                 android:textColor="@color/white" />
@@ -48,9 +48,9 @@
             android:id="@+id/recyclerview_transform"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:layout_weight="1"
             android:overScrollMode="never" />
     </LinearLayout>
@@ -61,7 +61,7 @@
         android:layout_height="match_parent"
         android:background="@drawable/bg_card"
         android:orientation="vertical"
-        android:padding="14dp"
+        android:padding="10dp"
         android:visibility="gone">
 
         <Button
@@ -69,7 +69,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_button_soft"
-            android:minHeight="42dp"
+            android:minHeight="34dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:text="返回便签列表"
             android:textAllCaps="false"
             android:textColor="@color/rn_primary_dark" />
@@ -83,7 +85,7 @@
             android:singleLine="true"
             android:textColor="@color/rn_text"
             android:textColorHint="@color/rn_text_muted"
-            android:textSize="22sp" />
+            android:textSize="20sp" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview_blocks"
@@ -99,6 +101,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_button_primary"
+            android:minHeight="38dp"
             android:text="添加一行"
             android:textAllCaps="false"
             android:textColor="@color/white" />
@@ -109,6 +112,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_button_danger"
+            android:minHeight="38dp"
             android:text="删除当前便签"
             android:textAllCaps="false"
             android:textColor="@color/rn_danger" />
