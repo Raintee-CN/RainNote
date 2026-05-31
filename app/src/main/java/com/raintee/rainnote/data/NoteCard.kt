@@ -1,11 +1,9 @@
 package com.raintee.rainnote.data
 
-data class NoteBlock(
+data class NoteCard(
     val id: String,
     val noteId: String,
-    val cardId: String,
-    val type: BlockType,
-    val content: String,
+    val title: String,
     val sortOrder: Int,
     val createdAt: Long,
     val updatedAt: Long,

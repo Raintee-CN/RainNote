@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:paddingStart="14dp"
-                android:text="我的卡片"
+                android:text="我的便签"
                 android:textAppearance="?attr/textAppearanceHeadline6"
                 android:textColor="@color/rn_text" />
 
@@ -39,7 +39,7 @@
                 android:minHeight="36dp"
                 android:paddingStart="14dp"
                 android:paddingEnd="14dp"
-                android:text="新建卡片"
+                android:text="新建便签"
                 android:textAllCaps="false"
                 android:textColor="@color/white" />
         </LinearLayout>
@@ -68,14 +68,14 @@
             android:id="@+id/button_back_to_list"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="返回卡片列表"
+            android:text="返回便签列表"
             android:visibility="gone" />
 
         <EditText
             android:id="@+id/edit_note_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="卡片标题"
+            android:hint="便签标题"
             android:inputType="textCapSentences"
             android:singleLine="true"
             android:textColor="@color/rn_text"
@@ -97,7 +97,7 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_button_primary"
             android:minHeight="38dp"
-            android:text="添加一行"
+            android:text="添加卡片"
             android:textAllCaps="false"
             android:textColor="@color/white" />
 
@@ -108,7 +108,7 @@
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_button_danger"
             android:minHeight="38dp"
-            android:text="删除当前卡片"
+            android:text="删除当前便签"
             android:textAllCaps="false"
             android:textColor="@color/rn_danger" />
     </LinearLayout>

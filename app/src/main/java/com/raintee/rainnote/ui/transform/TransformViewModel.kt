@@ -7,12 +7,18 @@ import androidx.lifecycle.MutableLiveData
 import com.raintee.rainnote.data.BlockType
 import com.raintee.rainnote.data.Note
 import com.raintee.rainnote.data.NoteBlock
+import com.raintee.rainnote.data.NoteCard
 import com.raintee.rainnote.data.NoteRepository
+
+data class CardEditorItem(
+    val card: NoteCard,
+    val blocks: List<NoteBlock>
+)
 
 data class NoteEditorState(
     val notes: List<Note> = emptyList(),
     val selectedNote: Note? = null,
-    val blocks: List<NoteBlock> = emptyList()
+    val cards: List<CardEditorItem> = emptyList()
 )
 
 class TransformViewModel(application: Application) : AndroidViewModel(application) {
@@ -31,12 +37,12 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         _state.value = NoteEditorState(
             notes = notes,
             selectedNote = selected,
-            blocks = selected?.let { repository.getBlocks(it.id) }.orEmpty()
+            cards = selected?.let { loadCards(it.id) }.orEmpty()
         )
     }
 
-    fun createNote(title: String = "未命名卡片") {
-        val note = repository.createNote(title.ifBlank { "未命名卡片" })
+    fun createNote(title: String = "未命名便签") {
+        val note = repository.createNote(title.ifBlank { "未命名便签" })
         refresh(note.id)
     }
 
@@ -49,6 +55,22 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         repository.updateNoteTitle(note, title)
     }
 
+    fun createCard(title: String): String? {
+        val note = _state.value?.selectedNote ?: return null
+        val card = repository.createCard(note.id, title)
+        refresh(note.id)
+        return card.id
+    }
+
+    fun updateCardTitle(card: NoteCard, title: String) {
+        repository.updateCardTitle(card, title)
+    }
+
+    fun deleteCard(card: NoteCard) {
+        repository.deleteCard(card.noteId, card.id)
+        refresh(card.noteId)
+    }
+
     fun updateBlock(block: NoteBlock, content: String) {
         repository.saveBlock(block.copy(content = content))
     }
@@ -58,37 +80,34 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setBlockType(block: NoteBlock, type: BlockType): String {
-        val latest = repository.getBlocks(block.noteId).firstOrNull { it.id == block.id } ?: block
-        val updated = latest.copy(type = type)
-        repository.saveBlock(updated)
-        val current = _state.value ?: return updated.id
-        _state.value = current.copy(blocks = repository.getBlocks(updated.noteId))
+        val latest = repository.getBlocks(block.cardId).firstOrNull { it.id == block.id } ?: block
+        repository.saveBlock(latest.copy(type = type))
+        refresh(latest.noteId)
         return block.id
     }
 
-    fun appendBlock(): String? {
-        val state = _state.value ?: return null
-        val note = state.selectedNote ?: return null
-        val latestBlocks = repository.getBlocks(note.id)
+    fun appendBlock(card: NoteCard): String? {
+        val latestBlocks = repository.getBlocks(card.id)
         val lastBlock = latestBlocks.lastOrNull()
         val inserted = if (lastBlock == null) {
-            repository.insertBlockAfter(note.id, emptyList(), "")
+            repository.insertBlockAfter(card, emptyList(), "")
         } else {
-            repository.insertBlockAfter(note.id, latestBlocks, lastBlock.id)
+            repository.insertBlockAfter(card, latestBlocks, lastBlock.id)
         }
-        refresh(note.id)
+        refresh(card.noteId)
         return inserted.id
     }
 
     fun insertBlockAfter(block: NoteBlock): String? {
-        val latestBlocks = repository.getBlocks(block.noteId)
-        val inserted = repository.insertBlockAfter(block.noteId, latestBlocks, block.id)
+        val card = repository.getCards(block.noteId).firstOrNull { it.id == block.cardId } ?: return null
+        val latestBlocks = repository.getBlocks(block.cardId)
+        val inserted = repository.insertBlockAfter(card, latestBlocks, block.id)
         refresh(block.noteId)
         return inserted.id
     }
 
     fun deleteBlock(block: NoteBlock) {
-        val latestBlocks = repository.getBlocks(block.noteId)
+        val latestBlocks = repository.getBlocks(block.cardId)
         val latestBlock = latestBlocks.firstOrNull { it.id == block.id } ?: block
         repository.deleteBlock(latestBlocks, latestBlock)
         refresh(block.noteId)
@@ -98,5 +117,11 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         val note = _state.value?.selectedNote ?: return
         repository.deleteNote(note.id)
         refresh(null)
+    }
+
+    private fun loadCards(noteId: String): List<CardEditorItem> {
+        return repository.getCards(noteId).map { card ->
+            CardEditorItem(card = card, blocks = repository.getBlocks(card.id))
+        }
     }
 }

@@ -10,10 +10,11 @@ class SyncManager(context: Context) {
 
     fun buildLocalPayload(): SyncPayload {
         val notes = repository.getNotes()
+        val cards = notes.flatMap { repository.getCards(it.id) }
         return SyncPayload(
             deviceId = pairingManager.localHandshake().deviceId,
             notes = notes,
-            blocks = notes.flatMap { repository.getBlocks(it.id) },
+            blocks = cards.flatMap { repository.getBlocks(it.id) },
             deletedIds = emptyList(),
             timestamp = System.currentTimeMillis()
         )

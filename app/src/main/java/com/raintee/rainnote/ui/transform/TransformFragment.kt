@@ -2,7 +2,6 @@ package com.raintee.rainnote.ui.transform
 
 import android.graphics.Typeface
 import android.os.Bundle
-import android.text.Editable
 import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -11,7 +10,6 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.PopupMenu
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -23,8 +21,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.raintee.rainnote.data.BlockType
 import com.raintee.rainnote.data.Note
 import com.raintee.rainnote.data.NoteBlock
+import com.raintee.rainnote.data.NoteCard
 import com.raintee.rainnote.databinding.FragmentTransformBinding
 import com.raintee.rainnote.databinding.ItemNoteBlockBinding
+import com.raintee.rainnote.databinding.ItemNoteCardBinding
 import com.raintee.rainnote.databinding.ItemTransformBinding
 
 class TransformFragment : Fragment() {
@@ -33,9 +33,10 @@ class TransformFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: TransformViewModel
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var blockAdapter: BlockAdapter
+    private lateinit var cardAdapter: CardAdapter
     private var titleWatcher: TextWatcher? = null
     private var pendingFocusBlockId: String? = null
+    private var pendingFocusCardId: String? = null
     private var bindingTitle = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -46,7 +47,10 @@ class TransformFragment : Fragment() {
             viewModel.selectNote(it)
             showEditorPanel()
         }
-        blockAdapter = BlockAdapter(
+        cardAdapter = CardAdapter(
+            onCardTitleChanged = viewModel::updateCardTitle,
+            onCardLongPressed = ::showCardMenu,
+            onAddRowClicked = { card -> pendingFocusBlockId = viewModel.appendBlock(card) },
             onContentChanged = viewModel::updateBlock,
             onTypeClicked = ::showTypeMenu,
             onDeleteClicked = viewModel::deleteBlock,
@@ -56,12 +60,10 @@ class TransformFragment : Fragment() {
         binding.recyclerviewTransform.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewTransform.adapter = noteAdapter
         binding.recyclerviewBlocks.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerviewBlocks.adapter = blockAdapter
+        binding.recyclerviewBlocks.adapter = cardAdapter
 
-        binding.buttonAddNote.setOnClickListener {
-            showCreateCardDialog()
-        }
-        binding.buttonAddBlock.setOnClickListener { pendingFocusBlockId = viewModel.appendBlock() }
+        binding.buttonAddNote.setOnClickListener { showCreateNoteDialog() }
+        binding.buttonAddBlock.setOnClickListener { showCreateCardDialog() }
         binding.buttonDeleteNote.setOnClickListener {
             viewModel.deleteSelectedNote()
             if (!isWideLayout()) showListPanel()
@@ -79,10 +81,13 @@ class TransformFragment : Fragment() {
     private fun render(state: NoteEditorState) {
         noteAdapter.selectedId = state.selectedNote?.id
         noteAdapter.submitList(state.notes)
-        blockAdapter.focusBlockId = pendingFocusBlockId
-        blockAdapter.submitList(state.blocks) {
+        cardAdapter.focusBlockId = pendingFocusBlockId
+        cardAdapter.focusCardId = pendingFocusCardId
+        cardAdapter.submitList(state.cards) {
             pendingFocusBlockId = null
-            blockAdapter.focusBlockId = null
+            pendingFocusCardId = null
+            cardAdapter.focusBlockId = null
+            cardAdapter.focusCardId = null
         }
         titleWatcher?.let { binding.editNoteTitle.removeTextChangedListener(it) }
         val title = state.selectedNote?.title.orEmpty()
@@ -99,6 +104,43 @@ class TransformFragment : Fragment() {
         }
     }
 
+    private fun showCreateNoteDialog() {
+        showTitleDialog(title = "新建便签", hint = "例如：工作记录") { title ->
+            viewModel.createNote(title)
+            showEditorPanel()
+        }
+    }
+
+    private fun showCreateCardDialog() {
+        showTitleDialog(title = "新建卡片", hint = "例如：今天的灵感") { title ->
+            pendingFocusCardId = viewModel.createCard(title)
+        }
+    }
+
+    private fun showTitleDialog(title: String, hint: String, onCreate: (String) -> Unit) {
+        val input = EditText(requireContext()).apply {
+            this.hint = hint
+            isSingleLine = true
+            setPadding(32, 16, 32, 0)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setView(input)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("创建") { _, _ -> onCreate(input.text.toString()) }
+            .show()
+    }
+
+    private fun showCardMenu(card: NoteCard, anchor: View) {
+        PopupMenu(requireContext(), anchor).apply {
+            menu.add(0, 0, 0, "删除这张卡片")
+            setOnMenuItemClickListener {
+                viewModel.deleteCard(card)
+                true
+            }
+        }.show()
+    }
+
     private fun showTypeMenu(block: NoteBlock, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
             BlockType.entries.forEachIndexed { index, type -> menu.add(0, index, index, type.label) }
@@ -108,23 +150,6 @@ class TransformFragment : Fragment() {
                 true
             }
         }.show()
-    }
-
-    private fun showCreateCardDialog() {
-        val input = EditText(requireContext()).apply {
-            hint = "例如：今天的灵感"
-            isSingleLine = true
-            setPadding(32, 16, 32, 0)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle("新建卡片")
-            .setView(input)
-            .setNegativeButton("取消", null)
-            .setPositiveButton("创建") { _, _ ->
-                viewModel.createNote(input.text.toString())
-                showEditorPanel()
-            }
-            .show()
     }
 
     private fun isWideLayout(): Boolean = binding.buttonBackToList.visibility == View.GONE
@@ -176,17 +201,24 @@ private object NoteDiff : DiffUtil.ItemCallback<Note>() {
     override fun areContentsTheSame(oldItem: Note, newItem: Note) = oldItem == newItem
 }
 
-private class BlockAdapter(
+private class CardAdapter(
+    private val onCardTitleChanged: (NoteCard, String) -> Unit,
+    private val onCardLongPressed: (NoteCard, View) -> Unit,
+    private val onAddRowClicked: (NoteCard) -> Unit,
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
-) : ListAdapter<NoteBlock, BlockViewHolder>(BlockDiff) {
+) : ListAdapter<CardEditorItem, CardViewHolder>(CardDiff) {
     var focusBlockId: String? = null
+    var focusCardId: String? = null
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockViewHolder {
-        return BlockViewHolder(
-            ItemNoteBlockBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
+        return CardViewHolder(
+            ItemNoteCardBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+            onCardTitleChanged,
+            onCardLongPressed,
+            onAddRowClicked,
             onContentChanged,
             onTypeClicked,
             onDeleteClicked,
@@ -194,40 +226,68 @@ private class BlockAdapter(
         )
     }
 
-    override fun onBindViewHolder(holder: BlockViewHolder, position: Int) {
-        val block = getItem(position)
-        holder.bind(block, block.id == focusBlockId)
+    override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
+        val item = getItem(position)
+        holder.bind(item, focusCardId == item.card.id, focusBlockId)
     }
 }
 
-private class BlockViewHolder(
-    private val binding: ItemNoteBlockBinding,
+private class CardViewHolder(
+    private val binding: ItemNoteCardBinding,
+    private val onCardTitleChanged: (NoteCard, String) -> Unit,
+    private val onCardLongPressed: (NoteCard, View) -> Unit,
+    private val onAddRowClicked: (NoteCard) -> Unit,
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
+    private var titleWatcher: TextWatcher? = null
 
-    private var watcher: TextWatcher? = null
-
-    fun bind(block: NoteBlock, requestFocus: Boolean) {
-        binding.textBlockType.text = block.type.label
-        binding.textBlockType.setOnClickListener { onTypeClicked(block, it) }
+    fun bind(item: CardEditorItem, requestCardFocus: Boolean, focusBlockId: String?) {
+        titleWatcher?.let { binding.editCardTitle.removeTextChangedListener(it) }
+        if (binding.editCardTitle.text.toString() != item.card.title && !binding.editCardTitle.hasFocus()) {
+            binding.editCardTitle.setText(item.card.title)
+        }
+        titleWatcher = binding.editCardTitle.doAfterTextChanged { text ->
+            if (text.toString() != item.card.title) onCardTitleChanged(item.card, text.toString())
+        }
         binding.root.setOnLongClickListener {
-            showBlockMenu(block, it, onDeleteClicked, onTypeClicked)
+            onCardLongPressed(item.card, it)
             true
         }
-
-        watcher?.let { binding.editBlockContent.removeTextChangedListener(it) }
-        if (binding.editBlockContent.text.toString() != block.content && !binding.editBlockContent.hasFocus()) {
-            binding.editBlockContent.setText(block.content)
+        binding.buttonAddRow.setOnClickListener { onAddRowClicked(item.card) }
+        binding.blockContainer.removeAllViews()
+        val inflater = LayoutInflater.from(binding.root.context)
+        item.blocks.forEach { block ->
+            val row = ItemNoteBlockBinding.inflate(inflater, binding.blockContainer, false)
+            bindBlockRow(row, block, focusBlockId == block.id)
+            binding.blockContainer.addView(row.root)
         }
-        configureInput(binding.editBlockContent, block.type)
-        watcher = binding.editBlockContent.doAfterTextChanged { text ->
+        if (requestCardFocus) {
+            binding.editCardTitle.post {
+                binding.editCardTitle.requestFocus()
+                binding.editCardTitle.setSelection(binding.editCardTitle.text.length)
+            }
+        }
+    }
+
+    private fun bindBlockRow(row: ItemNoteBlockBinding, block: NoteBlock, requestFocus: Boolean) {
+        row.textBlockType.text = block.type.label
+        row.textBlockType.setOnClickListener { onTypeClicked(block, it) }
+        row.root.setOnLongClickListener {
+            showBlockMenu(block, it)
+            true
+        }
+        if (row.editBlockContent.text.toString() != block.content && !row.editBlockContent.hasFocus()) {
+            row.editBlockContent.setText(block.content)
+        }
+        configureInput(row.editBlockContent, block.type)
+        row.editBlockContent.doAfterTextChanged { text ->
             val value = text.toString()
             if (value != block.content) onContentChanged(block, value)
         }
-        binding.editBlockContent.setOnEditorActionListener { _, actionId, event ->
+        row.editBlockContent.setOnEditorActionListener { _, actionId, event ->
             val isEnter = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP
             if (block.type != BlockType.CodeBlock && (actionId == EditorInfo.IME_ACTION_NEXT || isEnter)) {
                 onEnterPressed(block)
@@ -237,19 +297,14 @@ private class BlockViewHolder(
             }
         }
         if (requestFocus) {
-            binding.editBlockContent.post {
-                binding.editBlockContent.requestFocus()
-                binding.editBlockContent.setSelection(binding.editBlockContent.text.length)
+            row.editBlockContent.post {
+                row.editBlockContent.requestFocus()
+                row.editBlockContent.setSelection(row.editBlockContent.text.length)
             }
         }
     }
 
-    private fun showBlockMenu(
-        block: NoteBlock,
-        anchor: View,
-        onDeleteClicked: (NoteBlock) -> Unit,
-        onTypeClicked: (NoteBlock, View) -> Unit
-    ) {
+    private fun showBlockMenu(block: NoteBlock, anchor: View) {
         PopupMenu(anchor.context, anchor).apply {
             menu.add(0, 0, 0, "切换类型")
             menu.add(0, 1, 1, "删除这一行")
@@ -289,7 +344,7 @@ private class BlockViewHolder(
     }
 }
 
-private object BlockDiff : DiffUtil.ItemCallback<NoteBlock>() {
-    override fun areItemsTheSame(oldItem: NoteBlock, newItem: NoteBlock) = oldItem.id == newItem.id
-    override fun areContentsTheSame(oldItem: NoteBlock, newItem: NoteBlock) = oldItem == newItem
+private object CardDiff : DiffUtil.ItemCallback<CardEditorItem>() {
+    override fun areItemsTheSame(oldItem: CardEditorItem, newItem: CardEditorItem) = oldItem.card.id == newItem.card.id
+    override fun areContentsTheSame(oldItem: CardEditorItem, newItem: CardEditorItem) = oldItem == newItem
 }
