@@ -15,7 +15,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.raintee.rainnote.databinding.FragmentReflowBinding
+import com.raintee.rainnote.databinding.ItemPendingNoteBinding
 import com.raintee.rainnote.databinding.ItemWifiPeerBinding
+import com.raintee.rainnote.sync.PendingSyncNote
 import com.raintee.rainnote.sync.WifiDirectPeer
 
 class ReflowFragment : Fragment() {
@@ -24,19 +26,25 @@ class ReflowFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: ReflowViewModel
     private lateinit var adapter: WifiPeerAdapter
+    private lateinit var pendingAdapter: PendingNoteAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[ReflowViewModel::class.java]
         _binding = FragmentReflowBinding.inflate(inflater, container, false)
         adapter = WifiPeerAdapter { viewModel.connectAndSend(it) }
+        pendingAdapter = PendingNoteAdapter()
         binding.recyclerviewWifiPeers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewWifiPeers.adapter = adapter
+        binding.recyclerviewPendingNotes.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerviewPendingNotes.adapter = pendingAdapter
         binding.buttonDiscoverWifi.setOnClickListener {
             requestWifiPermissionsIfNeeded()
             viewModel.refresh()
         }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
         viewModel.peers.observe(viewLifecycleOwner) { adapter.submitList(it) }
+        viewModel.pendingNotes.observe(viewLifecycleOwner) { pendingAdapter.submitList(it) }
+        binding.buttonAcceptPending.setOnClickListener { viewModel.acceptPending(pendingAdapter.selectedIds()) }
         requestWifiPermissionsIfNeeded()
         viewModel.refresh()
         return binding.root
@@ -55,6 +63,7 @@ class ReflowFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding.recyclerviewWifiPeers.adapter = null
+        binding.recyclerviewPendingNotes.adapter = null
         _binding = null
     }
 }
@@ -82,4 +91,37 @@ private class WifiPeerViewHolder(
 private object WifiPeerDiff : DiffUtil.ItemCallback<WifiDirectPeer>() {
     override fun areItemsTheSame(oldItem: WifiDirectPeer, newItem: WifiDirectPeer) = oldItem.address == newItem.address
     override fun areContentsTheSame(oldItem: WifiDirectPeer, newItem: WifiDirectPeer) = oldItem == newItem
+}
+
+private class PendingNoteAdapter : ListAdapter<PendingSyncNote, PendingNoteViewHolder>(PendingNoteDiff) {
+    private val selected = mutableSetOf<String>()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PendingNoteViewHolder {
+        return PendingNoteViewHolder(ItemPendingNoteBinding.inflate(LayoutInflater.from(parent.context), parent, false)) { note ->
+            if (!selected.add(note.id)) selected.remove(note.id)
+            notifyDataSetChanged()
+        }
+    }
+
+    override fun onBindViewHolder(holder: PendingNoteViewHolder, position: Int) {
+        holder.bind(getItem(position), getItem(position).id in selected)
+    }
+
+    fun selectedIds(): Set<String> = selected.toSet()
+}
+
+private class PendingNoteViewHolder(
+    private val binding: ItemPendingNoteBinding,
+    private val onClick: (PendingSyncNote) -> Unit
+) : RecyclerView.ViewHolder(binding.root) {
+    fun bind(note: PendingSyncNote, selected: Boolean) {
+        binding.textPendingNote.text = "${note.title}\n卡片 ${note.cardCount} 张，行块 ${note.blockCount} 个"
+        binding.textPendingNote.isChecked = selected
+        binding.root.setOnClickListener { onClick(note) }
+    }
+}
+
+private object PendingNoteDiff : DiffUtil.ItemCallback<PendingSyncNote>() {
+    override fun areItemsTheSame(oldItem: PendingSyncNote, newItem: PendingSyncNote) = oldItem.id == newItem.id
+    override fun areContentsTheSame(oldItem: PendingSyncNote, newItem: PendingSyncNote) = oldItem == newItem
 }

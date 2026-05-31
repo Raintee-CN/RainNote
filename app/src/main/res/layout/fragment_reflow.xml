@@ -13,7 +13,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_paper"
+        android:maxLines="9"
         android:padding="16dp"
+        android:scrollbars="vertical"
         android:textColor="@color/rn_text"
         android:textSize="15sp" />
 
@@ -31,4 +33,27 @@
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="待接收便签"
+        android:textColor="@color/rn_text"
+        android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerview_pending_notes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/button_accept_pending"
+        style="@style/RainNoteButtonPrimary"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_marginTop="8dp"
+        android:text="接收选中的便签" />
 </LinearLayout>

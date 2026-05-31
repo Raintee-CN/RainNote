@@ -114,11 +114,13 @@ class WifiDirectSyncManager(context: Context) {
                 ServerSocket(port).use { server ->
                     updateStatus("Wi-Fi Direct 正在监听端口 $port。")
                     AppLog.d("WifiDirect", "server listening port=$port")
-                    val socket = server.accept()
-                    socket.use {
-                        val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
-                        AppLog.d("WifiDirect", "server received bytes=${text.toByteArray(StandardCharsets.UTF_8).size}")
-                        onPayload(text)
+                    while (isReceiving) {
+                        val socket = server.accept()
+                        socket.use {
+                            val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
+                            AppLog.d("WifiDirect", "server received bytes=${text.toByteArray(StandardCharsets.UTF_8).size}")
+                            onPayload(text)
+                        }
                     }
                 }
             } catch (error: Throwable) {

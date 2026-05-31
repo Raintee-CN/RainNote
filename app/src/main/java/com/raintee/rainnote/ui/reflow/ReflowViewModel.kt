@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.raintee.rainnote.sync.SyncManager
+import com.raintee.rainnote.sync.PendingSyncNote
 import com.raintee.rainnote.sync.WifiDirectPeer
 
 class ReflowViewModel(application: Application) : AndroidViewModel(application) {
@@ -14,6 +15,8 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     val text: LiveData<String> = _text
     private val _peers = MutableLiveData<List<WifiDirectPeer>>(emptyList())
     val peers: LiveData<List<WifiDirectPeer>> = _peers
+    private val _pendingNotes = MutableLiveData<List<PendingSyncNote>>(emptyList())
+    val pendingNotes: LiveData<List<PendingSyncNote>> = _pendingNotes
 
     fun refresh() {
         syncManager.startWifiDirectDiscovery {
@@ -21,6 +24,7 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
             _text.postValue(buildText())
         }
         syncManager.startWifiDirectReceiver {
+            _pendingNotes.postValue(syncManager.pendingNotes())
             _text.postValue(buildText() + "\n\n$it")
         }
         _text.value = buildText()
@@ -31,6 +35,12 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
         syncManager.connectAndSendWifiDirect(peer) {
             _text.postValue(buildText() + "\n\n$it")
         }
+    }
+
+    fun acceptPending(noteIds: Set<String>) {
+        val count = syncManager.acceptPendingNotes(noteIds)
+        _pendingNotes.value = emptyList()
+        _text.value = buildText() + "\n\n已接收 $count 个便签。"
     }
 
     private fun buildText(): String {
@@ -48,7 +58,7 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
             本机卡片：${payload.cards.size} 张
             本机行块：${payload.blocks.size} 个
 
-            点击下方设备可连接并发送本机同步数据；本页也会监听对方发来的同步数据。
+            点击设备会向对方发送本机数据；收到对方数据后，请在“待接收便签”里选择并点击接收。
         """.trimIndent()
     }
 }

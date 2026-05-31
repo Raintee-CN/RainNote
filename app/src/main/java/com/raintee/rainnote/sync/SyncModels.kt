@@ -19,3 +19,10 @@ data class SyncPayload(
     val deletedIds: List<String>,
     val timestamp: Long
 )
+
+data class PendingSyncNote(
+    val id: String,
+    val title: String,
+    val cardCount: Int,
+    val blockCount: Int
+)
