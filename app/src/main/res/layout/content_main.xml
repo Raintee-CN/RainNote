@@ -26,7 +26,11 @@
         android:layout_height="56dp"
         android:layout_gravity="bottom"
         android:background="@color/rn_surface"
+        app:itemIconSize="22dp"
         app:itemIconTint="@color/bottom_nav_tint"
+        app:itemTextAppearanceActive="@style/RainNoteBottomNavTextActive"
+        app:itemTextAppearanceInactive="@style/RainNoteBottomNavTextInactive"
         app:itemTextColor="@color/bottom_nav_tint"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_navigation" />
 </LinearLayout>

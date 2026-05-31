@@ -32,16 +32,13 @@
 
             <Button
                 android:id="@+id/button_add_note"
+                style="@style/RainNoteButtonPrimary"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="30dp"
                 android:layout_margin="8dp"
-                android:background="@drawable/bg_button_primary"
-                android:minHeight="36dp"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="新建便签"
-                android:textAllCaps="false"
-                android:textColor="@color/white" />
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="新建便签" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
@@ -66,15 +63,12 @@
 
         <Button
             android:id="@+id/button_back_to_list"
+            style="@style/RainNoteButtonSoft"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_button_soft"
-            android:minHeight="34dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:text="返回便签列表"
-            android:textAllCaps="false"
-            android:textColor="@color/rn_primary_dark" />
+            android:layout_height="30dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="返回便签列表" />
 
         <EditText
             android:id="@+id/edit_note_title"
@@ -98,23 +92,17 @@
 
         <Button
             android:id="@+id/button_add_block"
+            style="@style/RainNoteButtonPrimary"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_button_primary"
-            android:minHeight="38dp"
-            android:text="添加卡片"
-            android:textAllCaps="false"
-            android:textColor="@color/white" />
+            android:layout_height="32dp"
+            android:text="添加卡片" />
 
         <Button
             android:id="@+id/button_delete_note"
+            style="@style/RainNoteButtonDanger"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_button_danger"
-            android:minHeight="38dp"
-            android:text="删除当前便签"
-            android:textAllCaps="false"
-            android:textColor="@color/rn_danger" />
+            android:layout_height="32dp"
+            android:layout_marginTop="6dp"
+            android:text="删除当前便签" />
     </LinearLayout>
 </LinearLayout>

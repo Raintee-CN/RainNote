@@ -17,6 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/rn_bg"
+            app:navigationIconTint="@color/rn_text"
             app:titleTextColor="@color/rn_text"
             app:popupTheme="@style/Theme.RainNote.PopupOverlay" />
 

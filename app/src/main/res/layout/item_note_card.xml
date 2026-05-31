@@ -32,15 +32,11 @@
 
     <Button
         android:id="@+id/button_add_row"
+        style="@style/RainNoteButtonTiny"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="28dp"
         android:layout_gravity="end"
-        android:background="@drawable/bg_button_soft"
-        android:minHeight="32dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:text="添加一行"
-        android:textAllCaps="false"
-        android:textColor="@color/rn_primary_dark"
-        android:textSize="12sp" />
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:text="添加一行" />
 </LinearLayout>

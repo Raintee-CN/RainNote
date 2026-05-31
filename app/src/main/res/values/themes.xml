@@ -21,7 +21,52 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.RainNote.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.RainNote.AppBarOverlay" parent="ThemeOverlay.AppCompat.Light">
+        <item name="colorControlNormal">@color/rn_text</item>
+        <item name="android:textColorPrimary">@color/rn_text</item>
+    </style>
 
     <style name="Theme.RainNote.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="RainNoteButtonBase">
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="RainNoteButtonPrimary" parent="RainNoteButtonBase">
+        <item name="android:background">@drawable/bg_button_primary</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="RainNoteButtonSoft" parent="RainNoteButtonBase">
+        <item name="android:background">@drawable/bg_button_soft</item>
+        <item name="android:textColor">@color/rn_primary_dark</item>
+    </style>
+
+    <style name="RainNoteButtonDanger" parent="RainNoteButtonBase">
+        <item name="android:background">@drawable/bg_button_danger</item>
+        <item name="android:textColor">@color/rn_danger</item>
+    </style>
+
+    <style name="RainNoteButtonTiny" parent="RainNoteButtonSoft">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="RainNoteBottomNavTextActive">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FF176B55</item>
+    </style>
+
+    <style name="RainNoteBottomNavTextInactive">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">#FF52635D</item>
+    </style>
 </resources>
