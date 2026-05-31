@@ -7,6 +7,7 @@ class SyncManager(context: Context) {
 
     private val repository = NoteRepository(context.applicationContext)
     private val pairingManager = NfcPairingManager(context.applicationContext)
+    private val bluetoothSyncManager = BluetoothSyncManager(context.applicationContext)
 
     fun buildLocalPayload(): SyncPayload {
         val notes = repository.getNotes()
@@ -14,6 +15,7 @@ class SyncManager(context: Context) {
         return SyncPayload(
             deviceId = pairingManager.localHandshake().deviceId,
             notes = notes,
+            cards = cards,
             blocks = cards.flatMap { repository.getBlocks(it.id) },
             deletedIds = emptyList(),
             timestamp = System.currentTimeMillis()
@@ -21,4 +23,6 @@ class SyncManager(context: Context) {
     }
 
     fun statusText(): String = pairingManager.statusText()
+
+    fun bluetoothStatusText(): String = bluetoothSyncManager.statusText()
 }
