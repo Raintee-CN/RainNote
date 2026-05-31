@@ -90,19 +90,26 @@ class WifiDirectSyncManager(context: Context) {
         })
     }
 
-    fun sendPayload(host: InetAddress, payload: SyncPayload, port: Int = SYNC_PORT) {
+    fun sendPayload(host: InetAddress, payload: SyncPayload, port: Int = SYNC_PORT): String? {
         AppLog.d("WifiDirect", "sendPayload host=${host.hostAddress} port=$port notes=${payload.notes.size} cards=${payload.cards.size} blocks=${payload.blocks.size}")
         val bytes = payload.toJson().toString().toByteArray(StandardCharsets.UTF_8)
-        Socket(host, port).use { socket ->
-            socket.getOutputStream().use { output ->
-                output.write(bytes)
-                output.flush()
-            }
+        return Socket(host, port).use { socket ->
+            val output = socket.getOutputStream()
+            output.write(bytes)
+            output.flush()
+            socket.shutdownOutput()
+            val response = socket.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText().ifBlank { null }
+            AppLog.d("WifiDirect", "sendPayload responseBytes=${response?.toByteArray(StandardCharsets.UTF_8)?.size ?: 0}")
+            response
         }
-        AppLog.d("WifiDirect", "sendPayload finished bytes=${bytes.size}")
     }
 
-    fun receivePayloadOnce(port: Int = SYNC_PORT, onPayload: (String) -> Unit, onError: (Throwable) -> Unit = {}) {
+    fun receivePayloadOnce(
+        port: Int = SYNC_PORT,
+        responsePayload: () -> SyncPayload? = { null },
+        onPayload: (String) -> Unit,
+        onError: (Throwable) -> Unit = {}
+    ) {
         if (isReceiving) {
             updateStatus("Wi-Fi Direct 接收端已在监听端口 $port。")
             AppLog.d("WifiDirect", "receivePayloadOnce skipped; already listening port=$port")
@@ -120,6 +127,13 @@ class WifiDirectSyncManager(context: Context) {
                             val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
                             AppLog.d("WifiDirect", "server received bytes=${text.toByteArray(StandardCharsets.UTF_8).size}")
                             onPayload(text)
+                            val response = responsePayload()?.toJson()?.toString()
+                            if (response != null) {
+                                val bytes = response.toByteArray(StandardCharsets.UTF_8)
+                                it.getOutputStream().write(bytes)
+                                it.getOutputStream().flush()
+                                AppLog.d("WifiDirect", "server responded bytes=${bytes.size}")
+                            }
                         }
                     }
                 }

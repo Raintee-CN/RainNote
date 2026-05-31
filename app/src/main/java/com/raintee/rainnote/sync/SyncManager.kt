@@ -46,6 +46,7 @@ class SyncManager(context: Context) {
 
     fun startWifiDirectReceiver(onStatus: (String) -> Unit = {}) {
         wifiDirectSyncManager.receivePayloadOnce(
+            responsePayload = { buildLocalPayload() },
             onPayload = { json ->
                 AppLog.d("SyncManager", "received payload json length=${json.length}")
                 pendingPayload = JSONObject(json)
@@ -113,8 +114,13 @@ class SyncManager(context: Context) {
             Thread {
                 try {
                     AppLog.d("SyncManager", "sending payload to peer=${peer.name} host=${host.hostAddress}")
-                    wifiDirectSyncManager.sendPayload(host, buildLocalPayload())
-                    onStatus("已向 ${peer.name} 发送同步数据。")
+                    val response = wifiDirectSyncManager.sendPayload(host, buildLocalPayload())
+                    if (!response.isNullOrBlank()) {
+                        pendingPayload = JSONObject(response)
+                        onStatus("已向 ${peer.name} 发送同步数据，并收到对方数据，待选择接收 ${pendingNotes().size} 个便签。")
+                    } else {
+                        onStatus("已向 ${peer.name} 发送同步数据。")
+                    }
                 } catch (error: Throwable) {
                     AppLog.e("SyncManager", "send payload failed peer=${peer.name}", error)
                     onStatus("发送到 ${peer.name} 失败：${error.message}")

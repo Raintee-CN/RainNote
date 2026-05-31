@@ -33,6 +33,7 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     fun connectAndSend(peer: WifiDirectPeer) {
         _text.value = buildText() + "\n\n正在连接 ${peer.name}..."
         syncManager.connectAndSendWifiDirect(peer) {
+            _pendingNotes.postValue(syncManager.pendingNotes())
             _text.postValue(buildText() + "\n\n$it")
         }
     }
