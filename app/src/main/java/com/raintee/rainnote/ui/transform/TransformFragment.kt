@@ -60,6 +60,7 @@ class TransformFragment : Fragment() {
             onContentChanged = viewModel::updateBlock,
             onTypeClicked = ::showTypeMenu,
             onDeleteClicked = ::confirmDeleteBlock,
+            onEmptyBackspace = viewModel::deleteBlock,
             onMoveClicked = viewModel::moveBlock,
             onMarkdownClicked = viewModel::appendMarkdown,
             onEnterPressed = { block -> pendingFocusBlockId = viewModel.insertBlockAfter(block) }
@@ -272,6 +273,7 @@ private class CardAdapter(
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
+    private val onEmptyBackspace: (NoteBlock) -> Unit,
     private val onMoveClicked: (NoteBlock, Int) -> Unit,
     private val onMarkdownClicked: (NoteBlock, String) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
@@ -289,6 +291,7 @@ private class CardAdapter(
             onContentChanged,
             onTypeClicked,
             onDeleteClicked,
+            onEmptyBackspace,
             onMoveClicked,
             onMarkdownClicked,
             onEnterPressed
@@ -321,6 +324,7 @@ private class CardViewHolder(
     private val onContentChanged: (NoteBlock, String) -> Unit,
     private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
+    private val onEmptyBackspace: (NoteBlock) -> Unit,
     private val onMoveClicked: (NoteBlock, Int) -> Unit,
     private val onMarkdownClicked: (NoteBlock, String) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
@@ -378,6 +382,14 @@ private class CardViewHolder(
             val isEnter = event?.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_UP
             if (block.type != BlockType.CodeBlock && (actionId == EditorInfo.IME_ACTION_NEXT || isEnter)) {
                 onEnterPressed(block)
+                true
+            } else {
+                false
+            }
+        }
+        row.editBlockContent.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_DOWN && row.editBlockContent.text.isEmpty()) {
+                onEmptyBackspace(block)
                 true
             } else {
                 false
