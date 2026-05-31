@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="3dp"
     android:layout_marginBottom="3dp"
-    android:background="@drawable/bg_block_row"
+    android:background="@drawable/bg_paper_row"
     android:gravity="top"
     android:orientation="horizontal"
     android:paddingStart="8dp"

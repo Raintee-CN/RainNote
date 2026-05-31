@@ -5,7 +5,8 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="6dp"
     android:layout_marginBottom="8dp"
-    android:background="@drawable/bg_card"
+    android:background="@drawable/bg_paper"
+    android:elevation="1dp"
     android:orientation="vertical"
     android:padding="10dp">
 
@@ -51,7 +52,7 @@
         android:id="@+id/button_add_row"
         style="@style/RainNoteButtonTiny"
         android:layout_width="wrap_content"
-        android:layout_height="28dp"
+        android:layout_height="32dp"
         android:layout_gravity="end"
         android:paddingStart="10dp"
         android:paddingEnd="10dp"
