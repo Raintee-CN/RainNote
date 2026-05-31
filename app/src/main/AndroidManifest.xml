@@ -37,6 +37,7 @@
             android:label="@string/app_name"
             android:resizeableActivity="true"
             android:theme="@style/Theme.RainNote.NoActionBar"
+            android:windowSoftInputMode="adjustNothing"
             tools:targetApi="24">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
