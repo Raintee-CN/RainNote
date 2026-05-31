@@ -17,6 +17,8 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     val peers: LiveData<List<WifiDirectPeer>> = _peers
     private val _pendingNotes = MutableLiveData<List<PendingSyncNote>>(emptyList())
     val pendingNotes: LiveData<List<PendingSyncNote>> = _pendingNotes
+    private val _prompt = MutableLiveData<String>()
+    val prompt: LiveData<String> = _prompt
 
     fun refresh() {
         syncManager.startWifiDirectDiscovery {
@@ -25,15 +27,19 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
         }
         syncManager.startWifiDirectReceiver {
             _pendingNotes.postValue(syncManager.pendingNotes())
+            _prompt.postValue(it)
             _text.postValue(buildText() + "\n\n$it")
         }
         _text.value = buildText()
     }
 
     fun connectAndSend(peer: WifiDirectPeer) {
-        _text.value = buildText() + "\n\n正在连接 ${peer.name}..."
+        val waiting = "正在连接 ${peer.name}，请稍候。"
+        _prompt.value = waiting
+        _text.value = buildText() + "\n\n$waiting"
         syncManager.connectAndSendWifiDirect(peer) {
             _pendingNotes.postValue(syncManager.pendingNotes())
+            _prompt.postValue(it)
             _text.postValue(buildText() + "\n\n$it")
         }
     }
@@ -41,7 +47,9 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     fun acceptPending(noteIds: Set<String>) {
         val count = syncManager.acceptPendingNotes(noteIds)
         _pendingNotes.value = emptyList()
-        _text.value = buildText() + "\n\n已接收 $count 个便签。"
+        val message = "已接收 $count 个便签。"
+        _prompt.value = message
+        _text.value = buildText() + "\n\n$message"
     }
 
     private fun buildText(): String {
