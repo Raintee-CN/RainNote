@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.PopupMenu
+import android.widget.TextView
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -190,9 +191,12 @@ private class BlockViewHolder(
     private var watcher: TextWatcher? = null
 
     fun bind(block: NoteBlock, requestFocus: Boolean) {
-        binding.buttonBlockType.text = block.type.label
-        binding.buttonBlockType.setOnClickListener { onTypeClicked(block, it) }
-        binding.buttonDeleteBlock.setOnClickListener { onDeleteClicked(block) }
+        binding.textBlockType.text = block.type.label
+        binding.textBlockType.setOnClickListener { onTypeClicked(block, it) }
+        binding.root.setOnLongClickListener {
+            showBlockMenu(block, it, onDeleteClicked, onTypeClicked)
+            true
+        }
 
         watcher?.let { binding.editBlockContent.removeTextChangedListener(it) }
         if (binding.editBlockContent.text.toString() != block.content && !binding.editBlockContent.hasFocus()) {
@@ -218,6 +222,25 @@ private class BlockViewHolder(
                 binding.editBlockContent.setSelection(binding.editBlockContent.text.length)
             }
         }
+    }
+
+    private fun showBlockMenu(
+        block: NoteBlock,
+        anchor: View,
+        onDeleteClicked: (NoteBlock) -> Unit,
+        onTypeClicked: (NoteBlock, View) -> Unit
+    ) {
+        PopupMenu(anchor.context, anchor).apply {
+            menu.add(0, 0, 0, "切换类型")
+            menu.add(0, 1, 1, "删除这一行")
+            setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    0 -> onTypeClicked(block, anchor)
+                    1 -> onDeleteClicked(block)
+                }
+                true
+            }
+        }.show()
     }
 
     private fun configureInput(editText: EditText, type: BlockType) {

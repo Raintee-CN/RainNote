@@ -13,12 +13,14 @@
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
 
-    <Button
-        android:id="@+id/button_block_type"
-        android:layout_width="64dp"
+    <TextView
+        android:id="@+id/text_block_type"
+        android:layout_width="56dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_button_soft"
         android:minHeight="44dp"
+        android:gravity="center"
+        android:text="文本"
         android:textAllCaps="false"
         android:textColor="@color/rn_primary_dark"
         android:textSize="12sp"
@@ -36,16 +38,6 @@
         android:minHeight="44dp"
         android:textColor="@color/rn_text"
         android:textColorHint="@color/rn_text_muted"
-        android:textSize="16sp" />
-
-    <Button
-        android:id="@+id/button_delete_block"
-        android:layout_width="48dp"
-        android:layout_height="wrap_content"
-        android:background="@drawable/bg_button_soft"
-        android:minHeight="44dp"
-        android:text="×"
-        android:textAllCaps="false"
-        android:textColor="@color/rn_text_muted"
-        android:textSize="12sp" />
+        android:textSize="16sp"
+        tools:text="长按这一行可切换类型或删除" />
 </LinearLayout>
