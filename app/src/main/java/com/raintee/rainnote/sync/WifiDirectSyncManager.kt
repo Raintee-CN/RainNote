@@ -29,7 +29,7 @@ class WifiDirectSyncManager(context: Context) {
     private val channel = manager?.initialize(appContext, appContext.mainLooper, null)
     private var receiver: BroadcastReceiver? = null
     private var peers: List<WifiDirectPeer> = emptyList()
-    private var lastStatus: String = "Wi-Fi Direct 未启动。"
+    private var lastStatus: String = "Wi-Fi 直连未启动。"
     @Volatile private var isReceiving = false
 
     val isAvailable: Boolean get() = manager != null && channel != null
@@ -44,18 +44,18 @@ class WifiDirectSyncManager(context: Context) {
     @SuppressLint("MissingPermission")
     fun startDiscovery(onPeersChanged: (List<WifiDirectPeer>) -> Unit = {}) {
         AppLog.d("WifiDirect", "startDiscovery requested")
-        val p2pManager = manager ?: return updateStatus("此设备不支持 Wi-Fi Direct。")
-        val p2pChannel = channel ?: return updateStatus("Wi-Fi Direct 初始化失败。")
-        if (!hasDiscoveryPermission()) return updateStatus("缺少 Wi-Fi Direct 发现权限，需要定位/附近设备权限。")
+        val p2pManager = manager ?: return updateStatus("此设备不支持 Wi-Fi 直连。")
+        val p2pChannel = channel ?: return updateStatus("Wi-Fi 直连初始化失败。")
+        if (!hasDiscoveryPermission()) return updateStatus("缺少 Wi-Fi 直连发现权限，需要定位/附近设备权限。")
         registerReceiver(onPeersChanged)
         p2pManager.discoverPeers(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                updateStatus("正在发现附近 Wi-Fi Direct 设备。")
+                updateStatus("正在发现附近 Wi-Fi 直连设备。")
                 AppLog.d("WifiDirect", "discoverPeers success")
             }
 
             override fun onFailure(reason: Int) {
-                updateStatus("Wi-Fi Direct 发现失败：$reason")
+                updateStatus("Wi-Fi 直连发现失败：$reason")
                 AppLog.d("WifiDirect", "discoverPeers failure reason=$reason")
             }
         })
@@ -111,7 +111,7 @@ class WifiDirectSyncManager(context: Context) {
         onError: (Throwable) -> Unit = {}
     ) {
         if (isReceiving) {
-            updateStatus("Wi-Fi Direct 接收端已在监听端口 $port。")
+            updateStatus("Wi-Fi 直连接收端已在监听端口 $port。")
             AppLog.d("WifiDirect", "receivePayloadOnce skipped; already listening port=$port")
             return
         }
@@ -119,7 +119,7 @@ class WifiDirectSyncManager(context: Context) {
         Thread {
             try {
                 ServerSocket(port).use { server ->
-                    updateStatus("Wi-Fi Direct 正在监听端口 $port。")
+                    updateStatus("Wi-Fi 直连正在监听端口 $port。")
                     AppLog.d("WifiDirect", "server listening port=$port")
                     while (isReceiving) {
                         val socket = server.accept()
@@ -149,10 +149,10 @@ class WifiDirectSyncManager(context: Context) {
 
     fun statusText(): String {
         return when {
-            !isAvailable -> "此设备不支持 Wi-Fi Direct。"
-            !hasDiscoveryPermission() -> "Wi-Fi Direct 缺少定位/附近设备权限。"
+            !isAvailable -> "此设备不支持 Wi-Fi 直连。"
+            !hasDiscoveryPermission() -> "Wi-Fi 直连缺少定位/附近设备权限。"
             peers.isEmpty() -> lastStatus
-            else -> "发现 Wi-Fi Direct 设备 ${peers.size} 台：${peers.joinToString { it.name }}"
+            else -> "发现 Wi-Fi 直连设备 ${peers.size} 台：${peers.joinToString { it.name }}"
         }
     }
 
@@ -170,13 +170,13 @@ class WifiDirectSyncManager(context: Context) {
                 when (intent.action) {
                     WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                         val enabled = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1) == WifiP2pManager.WIFI_P2P_STATE_ENABLED
-                        updateStatus(if (enabled) "Wi-Fi Direct 已开启。" else "Wi-Fi Direct 未开启。")
+                        updateStatus(if (enabled) "Wi-Fi 直连已开启。" else "Wi-Fi 直连未开启。")
                         AppLog.d("WifiDirect", "state changed enabled=$enabled")
                     }
                     WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> requestPeers(onPeersChanged)
                     WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                         val networkInfo = intent.getParcelableExtra<NetworkInfo>(WifiP2pManager.EXTRA_NETWORK_INFO)
-                        updateStatus(if (networkInfo?.isConnected == true) "Wi-Fi Direct 已连接。" else "Wi-Fi Direct 未连接。")
+                        updateStatus(if (networkInfo?.isConnected == true) "Wi-Fi 直连已连接。" else "Wi-Fi 直连未连接。")
                         AppLog.d("WifiDirect", "connection changed connected=${networkInfo?.isConnected == true}")
                     }
                 }
@@ -196,7 +196,7 @@ class WifiDirectSyncManager(context: Context) {
         if (!hasDiscoveryPermission()) return
         p2pManager.requestPeers(p2pChannel) { peerList ->
             peers = peerList.deviceList.map { it.toPeer() }
-            updateStatus("发现 Wi-Fi Direct 设备 ${peers.size} 台。")
+            updateStatus("发现 Wi-Fi 直连设备 ${peers.size} 台。")
             AppLog.d("WifiDirect", "peers changed count=${peers.size} peers=${peers.joinToString { it.name + "/" + it.address }}")
             onPeersChanged(peers)
         }

@@ -50,7 +50,7 @@ class ReflowFragment : Fragment() {
             requestWifiPermissionsIfNeeded()
             viewModel.refresh()
         }
-        binding.buttonExportBackup.setOnClickListener { exportBackup.launch("rainnote-backup.json") }
+        binding.buttonExportBackup.setOnClickListener { exportBackup.launch("雨笺备份.json") }
         binding.buttonImportBackup.setOnClickListener { importBackup.launch(arrayOf("application/json", "text/*", "*/*")) }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
         viewModel.prompt.observe(viewLifecycleOwner) { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }

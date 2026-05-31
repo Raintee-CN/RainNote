@@ -54,7 +54,7 @@ class SyncManager(context: Context) {
                 val count = pendingNotes().size
                 onStatus("已收到同步数据，待选择接收 $count 个便签。")
             },
-            onError = { error -> onStatus("Wi-Fi Direct 接收失败：${error.message}") }
+            onError = { error -> onStatus("Wi-Fi 直连接收失败：${error.message}") }
         )
     }
 
@@ -115,7 +115,7 @@ class SyncManager(context: Context) {
             AppLog.d("SyncManager", "connectionInfo peer=${peer.name} isGroupOwner=${info.isGroupOwner} groupOwner=${info.groupOwnerAddress?.hostAddress}")
             if (info.isGroupOwner) {
                 startWifiDirectReceiver(onStatus)
-                onStatus("本机是 Wi-Fi Direct 组主，正在等待 ${peer.name} 发送同步数据。")
+                onStatus("本机是 Wi-Fi 直连组主，正在等待 ${peer.name} 发送同步数据。")
                 return@connect
             }
             val host = info.groupOwnerAddress

@@ -39,7 +39,7 @@
                 style="@style/RainNoteButtonPrimary"
                 android:layout_width="match_parent"
                 android:layout_height="36dp"
-                android:text="发现 Wi‑Fi Direct 设备" />
+                android:text="发现 Wi‑Fi 直连设备" />
 
             <Button
                 android:id="@+id/button_export_backup"

@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="36dp"
         android:layout_marginTop="12dp"
-        android:text="发现 Wi‑Fi Direct 设备" />
+        android:text="发现 Wi‑Fi 直连设备" />
 
     <LinearLayout
         android:layout_width="match_parent"

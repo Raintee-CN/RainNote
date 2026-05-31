@@ -429,7 +429,7 @@ private class CardViewHolder(
                 editText.minLines = 1
                 editText.imeOptions = EditorInfo.IME_ACTION_NEXT
                 editText.typeface = Typeface.DEFAULT
-                editText.hint = "支持 Markdown，回车创建下一块"
+                editText.hint = "支持标记文本，回车创建下一块"
             }
             BlockType.CodeBlock -> {
                 editText.isSingleLine = false
