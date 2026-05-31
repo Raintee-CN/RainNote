@@ -112,11 +112,18 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         return inserted.id
     }
 
-    fun deleteBlock(block: NoteBlock) {
+    fun deleteBlock(block: NoteBlock): String? {
         val latestBlocks = repository.getBlocks(block.cardId)
+        val index = latestBlocks.indexOfFirst { it.id == block.id }
+        val focusAfterDelete = when {
+            latestBlocks.size <= 1 -> block.id
+            index > 0 -> latestBlocks[index - 1].id
+            else -> latestBlocks.getOrNull(1)?.id
+        }
         val latestBlock = latestBlocks.firstOrNull { it.id == block.id } ?: block
         repository.deleteBlock(latestBlocks, latestBlock)
         refresh(block.noteId)
+        return focusAfterDelete
     }
 
     fun moveBlock(block: NoteBlock, direction: Int) {

@@ -60,7 +60,7 @@ class TransformFragment : Fragment() {
             onContentChanged = viewModel::updateBlock,
             onTypeClicked = ::showTypeMenu,
             onDeleteClicked = ::confirmDeleteBlock,
-            onEmptyBackspace = viewModel::deleteBlock,
+            onEmptyBackspace = { block -> pendingFocusBlockId = viewModel.deleteBlock(block) },
             onMoveClicked = viewModel::moveBlock,
             onMarkdownClicked = viewModel::appendMarkdown,
             onEnterPressed = { block -> pendingFocusBlockId = viewModel.insertBlockAfter(block) }
