@@ -124,6 +124,11 @@ class TransformFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::viewModel.isInitialized) viewModel.refreshSelected()
+    }
+
     private fun applyNoteFilter() {
         val keyword = binding.editSearchNotes.text.toString().trim()
         val filtered = if (keyword.isEmpty()) {
