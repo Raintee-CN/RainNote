@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 android {
     namespace = "com.raintee.rainnote"
     compileSdk {
@@ -35,6 +39,17 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val buildTime = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+        variant.outputs.forEach { output ->
+            val versionName = variant.outputs.first().versionName.orNull ?: "dev"
+            val versionCode = variant.outputs.first().versionCode.orNull?.toString() ?: "0"
+            output.outputFileName.set("yujian-v${versionName}-${versionCode}-${variant.name}-${buildTime}.apk")
+        }
     }
 }
 
