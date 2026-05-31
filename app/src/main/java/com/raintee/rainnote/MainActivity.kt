@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
+import androidx.core.view.GravityCompat
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
@@ -34,6 +37,23 @@ class MainActivity : AppCompatActivity() {
         val navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!
         val navController = navHostFragment.navController
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
+                    binding.drawerLayout?.closeDrawer(GravityCompat.START)
+                    return
+                }
+                val currentId = navController.currentDestination?.id
+                val rootIds = setOf(R.id.nav_transform, R.id.nav_reflow, R.id.nav_slideshow)
+                if (currentId != null && currentId !in rootIds && navController.navigateUp()) return
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("退出雨笺？")
+                    .setMessage("确认退出应用吗？")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("退出") { _, _ -> finish() }
+                    .show()
+            }
+        })
 
         binding.navView?.let {
             appBarConfiguration = AppBarConfiguration(

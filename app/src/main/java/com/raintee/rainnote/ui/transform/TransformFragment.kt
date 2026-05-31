@@ -11,6 +11,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
+import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -41,6 +42,7 @@ class TransformFragment : Fragment() {
     private var pendingFocusCardId: String? = null
     private var bindingTitle = false
     private var allNotes: List<Note> = emptyList()
+    private lateinit var editorBackCallback: OnBackPressedCallback
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[TransformViewModel::class.java]
@@ -83,6 +85,12 @@ class TransformFragment : Fragment() {
         }
         binding.editSearchNotes.doAfterTextChanged { applyNoteFilter() }
         binding.buttonBackToList.setOnClickListener { showListPanel() }
+        editorBackCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                showListPanel()
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, editorBackCallback)
         if (isWideLayout()) showEditorPanel() else showListPanel()
 
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
@@ -208,11 +216,13 @@ class TransformFragment : Fragment() {
     private fun showListPanel() {
         binding.noteListPanel.visibility = View.VISIBLE
         binding.editorPanel.visibility = if (isWideLayout()) View.VISIBLE else View.GONE
+        if (::editorBackCallback.isInitialized) editorBackCallback.isEnabled = false
     }
 
     private fun showEditorPanel() {
         binding.editorPanel.visibility = View.VISIBLE
         if (!isWideLayout()) binding.noteListPanel.visibility = View.GONE
+        if (::editorBackCallback.isInitialized) editorBackCallback.isEnabled = !isWideLayout()
     }
 
     override fun onDestroyView() {
