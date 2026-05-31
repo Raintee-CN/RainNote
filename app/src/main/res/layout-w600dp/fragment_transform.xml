@@ -8,6 +8,7 @@
     tools:context=".ui.transform.TransformFragment">
 
     <LinearLayout
+        android:id="@+id/note_list_panel"
         android:layout_width="280dp"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -40,11 +41,19 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/editor_panel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_marginStart="16dp"
         android:layout_weight="1"
         android:orientation="vertical">
+
+        <Button
+            android:id="@+id/button_back_to_list"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="返回便签列表"
+            android:visibility="gone" />
 
         <EditText
             android:id="@+id/edit_note_title"
@@ -63,6 +72,12 @@
             android:clipToPadding="false"
             android:paddingTop="8dp"
             android:paddingBottom="8dp" />
+
+        <Button
+            android:id="@+id/button_add_block"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="添加一行" />
 
         <Button
             android:id="@+id/button_delete_note"

@@ -47,28 +47,46 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateTitle(title: String) {
         val note = _state.value?.selectedNote ?: return
         val updated = repository.updateNoteTitle(note, title)
-        refresh(updated.id)
+        val current = _state.value ?: return
+        _state.value = current.copy(
+            selectedNote = updated,
+            notes = current.notes.map { if (it.id == updated.id) updated else it }
+        )
     }
 
     fun updateBlock(block: NoteBlock, content: String) {
-        repository.saveBlock(block.copy(content = content))
-        refresh(block.noteId)
+        val updated = block.copy(content = content)
+        repository.saveBlock(updated)
+        val current = _state.value ?: return
+        _state.value = current.copy(blocks = current.blocks.map { if (it.id == block.id) updated else it })
     }
 
-    fun changeBlockType(block: NoteBlock) {
-        val nextType = when (block.type) {
-            BlockType.PlainText -> BlockType.RichText
-            BlockType.RichText -> BlockType.CodeBlock
-            BlockType.CodeBlock -> BlockType.PlainText
+    fun setBlockType(block: NoteBlock, type: BlockType): String {
+        val updated = block.copy(type = type)
+        repository.saveBlock(updated)
+        val current = _state.value ?: return block.id
+        _state.value = current.copy(blocks = current.blocks.map { if (it.id == block.id) updated else it })
+        return block.id
+    }
+
+    fun appendBlock(): String? {
+        val state = _state.value ?: return null
+        val note = state.selectedNote ?: return null
+        val lastBlock = state.blocks.lastOrNull()
+        val inserted = if (lastBlock == null) {
+            repository.insertBlockAfter(note.id, emptyList(), "")
+        } else {
+            repository.insertBlockAfter(note.id, state.blocks, lastBlock.id)
         }
-        repository.saveBlock(block.copy(type = nextType))
-        refresh(block.noteId)
+        refresh(note.id)
+        return inserted.id
     }
 
-    fun insertBlockAfter(block: NoteBlock) {
-        val state = _state.value ?: return
-        repository.insertBlockAfter(block.noteId, state.blocks, block.id)
+    fun insertBlockAfter(block: NoteBlock): String? {
+        val state = _state.value ?: return null
+        val inserted = repository.insertBlockAfter(block.noteId, state.blocks, block.id)
         refresh(block.noteId)
+        return inserted.id
     }
 
     fun deleteBlock(block: NoteBlock) {

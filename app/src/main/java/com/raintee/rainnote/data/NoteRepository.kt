@@ -48,18 +48,18 @@ class NoteRepository(context: Context) {
     }
 
     fun insertBlockAfter(noteId: String, blocks: List<NoteBlock>, currentBlockId: String, type: BlockType = BlockType.PlainText): NoteBlock {
-        val currentIndex = blocks.indexOfFirst { it.id == currentBlockId }.coerceAtLeast(0)
+        val currentIndex = blocks.indexOfFirst { it.id == currentBlockId }
         val now = System.currentTimeMillis()
         val nextBlock = NoteBlock(
             id = UUID.randomUUID().toString(),
             noteId = noteId,
             type = type,
             content = "",
-            sortOrder = currentIndex + 1,
+            sortOrder = if (currentIndex == -1) blocks.size else currentIndex + 1,
             createdAt = now,
             updatedAt = now
         )
-        val reordered = blocks.toMutableList().apply { add(currentIndex + 1, nextBlock) }
+        val reordered = blocks.toMutableList().apply { add(nextBlock.sortOrder, nextBlock) }
         reordered.forEachIndexed { index, block -> database.upsertBlock(block.copy(sortOrder = index)) }
         return nextBlock
     }

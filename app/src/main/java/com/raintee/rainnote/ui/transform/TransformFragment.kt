@@ -10,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.TextView
+import android.widget.PopupMenu
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -33,17 +33,22 @@ class TransformFragment : Fragment() {
     private lateinit var noteAdapter: NoteAdapter
     private lateinit var blockAdapter: BlockAdapter
     private var titleWatcher: TextWatcher? = null
+    private var pendingFocusBlockId: String? = null
+    private var bindingTitle = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[TransformViewModel::class.java]
         _binding = FragmentTransformBinding.inflate(inflater, container, false)
 
-        noteAdapter = NoteAdapter { viewModel.selectNote(it) }
+        noteAdapter = NoteAdapter {
+            viewModel.selectNote(it)
+            showEditorPanel()
+        }
         blockAdapter = BlockAdapter(
             onContentChanged = viewModel::updateBlock,
-            onTypeClicked = viewModel::changeBlockType,
+            onTypeClicked = ::showTypeMenu,
             onDeleteClicked = viewModel::deleteBlock,
-            onEnterPressed = viewModel::insertBlockAfter
+            onEnterPressed = { block -> pendingFocusBlockId = viewModel.insertBlockAfter(block) }
         )
 
         binding.recyclerviewTransform.layoutManager = LinearLayoutManager(requireContext())
@@ -51,8 +56,17 @@ class TransformFragment : Fragment() {
         binding.recyclerviewBlocks.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewBlocks.adapter = blockAdapter
 
-        binding.buttonAddNote.setOnClickListener { viewModel.createNote() }
-        binding.buttonDeleteNote.setOnClickListener { viewModel.deleteSelectedNote() }
+        binding.buttonAddNote.setOnClickListener {
+            viewModel.createNote()
+            showEditorPanel()
+        }
+        binding.buttonAddBlock.setOnClickListener { pendingFocusBlockId = viewModel.appendBlock() }
+        binding.buttonDeleteNote.setOnClickListener {
+            viewModel.deleteSelectedNote()
+            if (!isWideLayout()) showListPanel()
+        }
+        binding.buttonBackToList.setOnClickListener { showListPanel() }
+        if (isWideLayout()) showEditorPanel() else showListPanel()
 
         viewModel.state.observe(viewLifecycleOwner) { render(it) }
         return binding.root
@@ -61,15 +75,47 @@ class TransformFragment : Fragment() {
     private fun render(state: NoteEditorState) {
         noteAdapter.selectedId = state.selectedNote?.id
         noteAdapter.submitList(state.notes)
-        blockAdapter.submitList(state.blocks)
+        blockAdapter.focusBlockId = pendingFocusBlockId
+        blockAdapter.submitList(state.blocks) {
+            pendingFocusBlockId = null
+            blockAdapter.focusBlockId = null
+        }
         titleWatcher?.let { binding.editNoteTitle.removeTextChangedListener(it) }
-        binding.editNoteTitle.setText(state.selectedNote?.title.orEmpty())
-        binding.editNoteTitle.setSelection(binding.editNoteTitle.text.length)
+        val title = state.selectedNote?.title.orEmpty()
+        if (binding.editNoteTitle.text.toString() != title && !binding.editNoteTitle.hasFocus()) {
+            bindingTitle = true
+            binding.editNoteTitle.setText(title)
+            binding.editNoteTitle.setSelection(binding.editNoteTitle.text.length)
+            bindingTitle = false
+        }
         titleWatcher = binding.editNoteTitle.doAfterTextChanged { text ->
-            if (state.selectedNote != null && text.toString() != state.selectedNote.title) {
+            if (!bindingTitle && state.selectedNote != null && text.toString() != state.selectedNote.title) {
                 viewModel.updateTitle(text.toString())
             }
         }
+    }
+
+    private fun showTypeMenu(block: NoteBlock, anchor: View) {
+        PopupMenu(requireContext(), anchor).apply {
+            BlockType.entries.forEachIndexed { index, type -> menu.add(0, index, index, type.label) }
+            setOnMenuItemClickListener { item ->
+                val type = BlockType.entries[item.itemId]
+                pendingFocusBlockId = viewModel.setBlockType(block, type)
+                true
+            }
+        }.show()
+    }
+
+    private fun isWideLayout(): Boolean = binding.buttonBackToList.visibility == View.GONE
+
+    private fun showListPanel() {
+        binding.noteListPanel.visibility = View.VISIBLE
+        binding.editorPanel.visibility = if (isWideLayout()) View.VISIBLE else View.GONE
+    }
+
+    private fun showEditorPanel() {
+        binding.editorPanel.visibility = View.VISIBLE
+        if (!isWideLayout()) binding.noteListPanel.visibility = View.GONE
     }
 
     override fun onDestroyView() {
@@ -111,10 +157,12 @@ private object NoteDiff : DiffUtil.ItemCallback<Note>() {
 
 private class BlockAdapter(
     private val onContentChanged: (NoteBlock, String) -> Unit,
-    private val onTypeClicked: (NoteBlock) -> Unit,
+    private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
 ) : ListAdapter<NoteBlock, BlockViewHolder>(BlockDiff) {
+    var focusBlockId: String? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BlockViewHolder {
         return BlockViewHolder(
             ItemNoteBlockBinding.inflate(LayoutInflater.from(parent.context), parent, false),
@@ -126,27 +174,30 @@ private class BlockAdapter(
     }
 
     override fun onBindViewHolder(holder: BlockViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val block = getItem(position)
+        holder.bind(block, block.id == focusBlockId)
     }
 }
 
 private class BlockViewHolder(
     private val binding: ItemNoteBlockBinding,
     private val onContentChanged: (NoteBlock, String) -> Unit,
-    private val onTypeClicked: (NoteBlock) -> Unit,
+    private val onTypeClicked: (NoteBlock, View) -> Unit,
     private val onDeleteClicked: (NoteBlock) -> Unit,
     private val onEnterPressed: (NoteBlock) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var watcher: TextWatcher? = null
 
-    fun bind(block: NoteBlock) {
+    fun bind(block: NoteBlock, requestFocus: Boolean) {
         binding.buttonBlockType.text = block.type.label
-        binding.buttonBlockType.setOnClickListener { onTypeClicked(block) }
+        binding.buttonBlockType.setOnClickListener { onTypeClicked(block, it) }
         binding.buttonDeleteBlock.setOnClickListener { onDeleteClicked(block) }
 
         watcher?.let { binding.editBlockContent.removeTextChangedListener(it) }
-        binding.editBlockContent.setText(block.content)
+        if (binding.editBlockContent.text.toString() != block.content && !binding.editBlockContent.hasFocus()) {
+            binding.editBlockContent.setText(block.content)
+        }
         configureInput(binding.editBlockContent, block.type)
         watcher = binding.editBlockContent.doAfterTextChanged { text ->
             val value = text.toString()
@@ -161,6 +212,12 @@ private class BlockViewHolder(
                 false
             }
         }
+        if (requestFocus) {
+            binding.editBlockContent.post {
+                binding.editBlockContent.requestFocus()
+                binding.editBlockContent.setSelection(binding.editBlockContent.text.length)
+            }
+        }
     }
 
     private fun configureInput(editText: EditText, type: BlockType) {
@@ -169,18 +226,21 @@ private class BlockViewHolder(
                 editText.isSingleLine = true
                 editText.imeOptions = EditorInfo.IME_ACTION_NEXT
                 editText.typeface = Typeface.DEFAULT
+                editText.hint = "输入一行文字，回车到下一行"
             }
             BlockType.RichText -> {
                 editText.isSingleLine = false
                 editText.minLines = 1
                 editText.imeOptions = EditorInfo.IME_ACTION_NEXT
                 editText.typeface = Typeface.DEFAULT
+                editText.hint = "支持 Markdown，回车创建下一块"
             }
             BlockType.CodeBlock -> {
                 editText.isSingleLine = false
                 editText.minLines = 3
                 editText.imeOptions = EditorInfo.IME_ACTION_NONE
                 editText.typeface = Typeface.MONOSPACE
+                editText.hint = "代码块内回车换行"
             }
         }
     }
