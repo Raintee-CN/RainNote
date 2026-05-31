@@ -29,6 +29,7 @@ class WifiDirectSyncManager(context: Context) {
     private var receiver: BroadcastReceiver? = null
     private var peers: List<WifiDirectPeer> = emptyList()
     private var lastStatus: String = "Wi-Fi Direct 未启动。"
+    @Volatile private var isReceiving = false
 
     val isAvailable: Boolean get() = manager != null && channel != null
 
@@ -92,9 +93,15 @@ class WifiDirectSyncManager(context: Context) {
     }
 
     fun receivePayloadOnce(port: Int = SYNC_PORT, onPayload: (String) -> Unit, onError: (Throwable) -> Unit = {}) {
+        if (isReceiving) {
+            updateStatus("Wi-Fi Direct 接收端已在监听端口 $port。")
+            return
+        }
+        isReceiving = true
         Thread {
             try {
                 ServerSocket(port).use { server ->
+                    updateStatus("Wi-Fi Direct 正在监听端口 $port。")
                     val socket = server.accept()
                     socket.use {
                         val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
@@ -103,6 +110,8 @@ class WifiDirectSyncManager(context: Context) {
                 }
             } catch (error: Throwable) {
                 onError(error)
+            } finally {
+                isReceiving = false
             }
         }.start()
     }
