@@ -32,6 +32,7 @@ class ReflowFragment : Fragment() {
         reflowViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
+        reflowViewModel.refresh()
         return root
     }
 
