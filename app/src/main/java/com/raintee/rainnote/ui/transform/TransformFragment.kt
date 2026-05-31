@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import android.widget.PopupMenu
 import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.doAfterTextChanged
@@ -167,13 +166,12 @@ class TransformFragment : Fragment() {
     }
 
     private fun showCardMenu(card: NoteCard, anchor: View) {
-        PopupMenu(requireContext(), anchor).apply {
-            menu.add(0, 0, 0, "删除这张卡片")
-            setOnMenuItemClickListener {
-                confirmDeleteCard(card)
-                true
+        AlertDialog.Builder(requireContext())
+            .setTitle("卡片操作")
+            .setItems(arrayOf("删除这张卡片")) { _, which ->
+                if (which == 0) confirmDeleteCard(card)
             }
-        }.show()
+            .show()
     }
 
     private fun confirmDeleteNote() {
@@ -206,14 +204,13 @@ class TransformFragment : Fragment() {
     }
 
     private fun showTypeMenu(block: NoteBlock, anchor: View) {
-        PopupMenu(requireContext(), anchor).apply {
-            BlockType.entries.forEachIndexed { index, type -> menu.add(0, index, index, type.label) }
-            setOnMenuItemClickListener { item ->
-                val type = BlockType.entries[item.itemId]
-                pendingFocusBlockId = viewModel.setBlockType(block, type)
-                true
+        val labels = BlockType.entries.map { it.label }.toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle("选择行块类型")
+            .setItems(labels) { _, which ->
+                pendingFocusBlockId = viewModel.setBlockType(block, BlockType.entries[which])
             }
-        }.show()
+            .show()
     }
 
     private fun isWideLayout(): Boolean = binding.buttonBackToList.visibility == View.GONE
@@ -395,15 +392,11 @@ private class CardViewHolder(
     }
 
     private fun showBlockMenu(block: NoteBlock, anchor: View) {
-        PopupMenu(anchor.context, anchor).apply {
-            menu.add(0, 0, 0, "切换类型")
-            menu.add(0, 1, 1, "上移")
-            menu.add(0, 2, 2, "下移")
-            menu.add(0, 3, 3, "插入加粗")
-            menu.add(0, 4, 4, "插入列表")
-            menu.add(0, 5, 5, "删除这一行")
-            setOnMenuItemClickListener { item ->
-                when (item.itemId) {
+        val actions = arrayOf("切换类型", "上移", "下移", "插入加粗", "插入列表", "删除这一行")
+        AlertDialog.Builder(anchor.context)
+            .setTitle("行块操作")
+            .setItems(actions) { _, which ->
+                when (which) {
                     0 -> onTypeClicked(block, anchor)
                     1 -> onMoveClicked(block, -1)
                     2 -> onMoveClicked(block, 1)
@@ -411,9 +404,8 @@ private class CardViewHolder(
                     4 -> onMarkdownClicked(block, "- 列表项")
                     5 -> onDeleteClicked(block)
                 }
-                true
             }
-        }.show()
+            .show()
     }
 
     private fun configureInput(editText: EditText, type: BlockType) {
