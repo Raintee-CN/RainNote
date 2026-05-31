@@ -12,6 +12,8 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.appcompat.app.AppCompatActivity
+import com.raintee.rainnote.debug.AppLog
+import com.raintee.rainnote.debug.HttpLogServer
 import com.raintee.rainnote.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -23,6 +25,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        HttpLogServer.start()
+        AppLog.d("MainActivity", "RainNote started; log server port=${HttpLogServer.PORT}")
         setSupportActionBar(binding.appBarMain.toolbar)
 
         binding.appBarMain.fab?.visibility = View.GONE

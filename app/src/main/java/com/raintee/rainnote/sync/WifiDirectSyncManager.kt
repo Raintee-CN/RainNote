@@ -14,6 +14,7 @@ import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.raintee.rainnote.debug.AppLog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.InetAddress
@@ -42,6 +43,7 @@ class WifiDirectSyncManager(context: Context) {
 
     @SuppressLint("MissingPermission")
     fun startDiscovery(onPeersChanged: (List<WifiDirectPeer>) -> Unit = {}) {
+        AppLog.d("WifiDirect", "startDiscovery requested")
         val p2pManager = manager ?: return updateStatus("此设备不支持 Wi-Fi Direct。")
         val p2pChannel = channel ?: return updateStatus("Wi-Fi Direct 初始化失败。")
         if (!hasDiscoveryPermission()) return updateStatus("缺少 Wi-Fi Direct 发现权限，需要定位/附近设备权限。")
@@ -49,10 +51,12 @@ class WifiDirectSyncManager(context: Context) {
         p2pManager.discoverPeers(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 updateStatus("正在发现附近 Wi-Fi Direct 设备。")
+                AppLog.d("WifiDirect", "discoverPeers success")
             }
 
             override fun onFailure(reason: Int) {
                 updateStatus("Wi-Fi Direct 发现失败：$reason")
+                AppLog.d("WifiDirect", "discoverPeers failure reason=$reason")
             }
         })
     }
@@ -60,12 +64,14 @@ class WifiDirectSyncManager(context: Context) {
     fun stopDiscovery() {
         receiver?.let { appContext.unregisterReceiver(it) }
         receiver = null
+        AppLog.d("WifiDirect", "receiver stopped")
     }
 
     fun currentPeers(): List<WifiDirectPeer> = peers
 
     @SuppressLint("MissingPermission")
     fun connect(peer: WifiDirectPeer, onConnected: (WifiP2pInfo) -> Unit = {}) {
+        AppLog.d("WifiDirect", "connect requested peer=${peer.name}/${peer.address}")
         val p2pManager = manager ?: return
         val p2pChannel = channel ?: return
         if (!hasDiscoveryPermission()) return
@@ -73,16 +79,19 @@ class WifiDirectSyncManager(context: Context) {
         p2pManager.connect(p2pChannel, config, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 updateStatus("正在连接 ${peer.name}。")
+                AppLog.d("WifiDirect", "connect success callback peer=${peer.name}")
                 requestConnectionInfo(onConnected)
             }
 
             override fun onFailure(reason: Int) {
                 updateStatus("连接 ${peer.name} 失败：$reason")
+                AppLog.d("WifiDirect", "connect failure peer=${peer.name} reason=$reason")
             }
         })
     }
 
     fun sendPayload(host: InetAddress, payload: SyncPayload, port: Int = SYNC_PORT) {
+        AppLog.d("WifiDirect", "sendPayload host=${host.hostAddress} port=$port notes=${payload.notes.size} cards=${payload.cards.size} blocks=${payload.blocks.size}")
         val bytes = payload.toJson().toString().toByteArray(StandardCharsets.UTF_8)
         Socket(host, port).use { socket ->
             socket.getOutputStream().use { output ->
@@ -90,11 +99,13 @@ class WifiDirectSyncManager(context: Context) {
                 output.flush()
             }
         }
+        AppLog.d("WifiDirect", "sendPayload finished bytes=${bytes.size}")
     }
 
     fun receivePayloadOnce(port: Int = SYNC_PORT, onPayload: (String) -> Unit, onError: (Throwable) -> Unit = {}) {
         if (isReceiving) {
             updateStatus("Wi-Fi Direct 接收端已在监听端口 $port。")
+            AppLog.d("WifiDirect", "receivePayloadOnce skipped; already listening port=$port")
             return
         }
         isReceiving = true
@@ -102,16 +113,20 @@ class WifiDirectSyncManager(context: Context) {
             try {
                 ServerSocket(port).use { server ->
                     updateStatus("Wi-Fi Direct 正在监听端口 $port。")
+                    AppLog.d("WifiDirect", "server listening port=$port")
                     val socket = server.accept()
                     socket.use {
                         val text = it.getInputStream().bufferedReader(StandardCharsets.UTF_8).readText()
+                        AppLog.d("WifiDirect", "server received bytes=${text.toByteArray(StandardCharsets.UTF_8).size}")
                         onPayload(text)
                     }
                 }
             } catch (error: Throwable) {
+                AppLog.e("WifiDirect", "server receive failed", error)
                 onError(error)
             } finally {
                 isReceiving = false
+                AppLog.d("WifiDirect", "server stopped port=$port")
             }
         }.start()
     }
@@ -140,11 +155,13 @@ class WifiDirectSyncManager(context: Context) {
                     WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                         val enabled = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1) == WifiP2pManager.WIFI_P2P_STATE_ENABLED
                         updateStatus(if (enabled) "Wi-Fi Direct 已开启。" else "Wi-Fi Direct 未开启。")
+                        AppLog.d("WifiDirect", "state changed enabled=$enabled")
                     }
                     WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> requestPeers(onPeersChanged)
                     WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                         val networkInfo = intent.getParcelableExtra<NetworkInfo>(WifiP2pManager.EXTRA_NETWORK_INFO)
                         updateStatus(if (networkInfo?.isConnected == true) "Wi-Fi Direct 已连接。" else "Wi-Fi Direct 未连接。")
+                        AppLog.d("WifiDirect", "connection changed connected=${networkInfo?.isConnected == true}")
                     }
                 }
             }
@@ -164,6 +181,7 @@ class WifiDirectSyncManager(context: Context) {
         p2pManager.requestPeers(p2pChannel) { peerList ->
             peers = peerList.deviceList.map { it.toPeer() }
             updateStatus("发现 Wi-Fi Direct 设备 ${peers.size} 台。")
+            AppLog.d("WifiDirect", "peers changed count=${peers.size} peers=${peers.joinToString { it.name + "/" + it.address }}")
             onPeersChanged(peers)
         }
     }

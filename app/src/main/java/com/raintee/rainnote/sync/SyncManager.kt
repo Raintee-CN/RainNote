@@ -5,6 +5,7 @@ import com.raintee.rainnote.data.BlockType
 import com.raintee.rainnote.data.Note
 import com.raintee.rainnote.data.NoteBlock
 import com.raintee.rainnote.data.NoteCard
+import com.raintee.rainnote.debug.AppLog
 import com.raintee.rainnote.data.NoteRepository
 import org.json.JSONObject
 
@@ -18,11 +19,13 @@ class SyncManager(context: Context) {
     fun buildLocalPayload(): SyncPayload {
         val notes = repository.getNotes()
         val cards = notes.flatMap { repository.getCards(it.id) }
+        val blocks = cards.flatMap { repository.getBlocks(it.id) }
+        AppLog.d("SyncManager", "buildLocalPayload notes=${notes.size} cards=${cards.size} blocks=${blocks.size}")
         return SyncPayload(
             deviceId = pairingManager.localHandshake().deviceId,
             notes = notes,
             cards = cards,
-            blocks = cards.flatMap { repository.getBlocks(it.id) },
+            blocks = blocks,
             deletedIds = emptyList(),
             timestamp = System.currentTimeMillis()
         )
@@ -43,6 +46,7 @@ class SyncManager(context: Context) {
     fun startWifiDirectReceiver(onStatus: (String) -> Unit = {}) {
         wifiDirectSyncManager.receivePayloadOnce(
             onPayload = { json ->
+                AppLog.d("SyncManager", "received payload json length=${json.length}")
                 applyPayloadJson(json)
                 onStatus("已接收并合并 Wi-Fi Direct 同步数据。")
             },
@@ -54,14 +58,17 @@ class SyncManager(context: Context) {
         wifiDirectSyncManager.connect(peer) { info ->
             val host = info.groupOwnerAddress
             if (host == null) {
+                AppLog.d("SyncManager", "connectAndSend no groupOwnerAddress peer=${peer.name}")
                 onStatus("已连接，但未获取到对方地址。")
                 return@connect
             }
             Thread {
                 try {
+                    AppLog.d("SyncManager", "sending payload to peer=${peer.name} host=${host.hostAddress}")
                     wifiDirectSyncManager.sendPayload(host, buildLocalPayload())
                     onStatus("已向 ${peer.name} 发送同步数据。")
                 } catch (error: Throwable) {
+                    AppLog.e("SyncManager", "send payload failed peer=${peer.name}", error)
                     onStatus("发送到 ${peer.name} 失败：${error.message}")
                 }
             }.start()
@@ -70,6 +77,7 @@ class SyncManager(context: Context) {
 
     private fun applyPayloadJson(json: String) {
         val root = JSONObject(json)
+        AppLog.d("SyncManager", "applyPayloadJson started")
         val notes = root.optJSONArray("notes")
         for (index in 0 until (notes?.length() ?: 0)) {
             val item = notes!!.getJSONObject(index)
@@ -113,5 +121,6 @@ class SyncManager(context: Context) {
                 )
             )
         }
+        AppLog.d("SyncManager", "applyPayloadJson finished notes=${notes?.length() ?: 0} cards=${cards?.length() ?: 0} blocks=${blocks?.length() ?: 0}")
     }
 }
