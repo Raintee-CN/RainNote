@@ -69,6 +69,24 @@ class WifiDirectSyncManager(context: Context) {
 
     fun currentPeers(): List<WifiDirectPeer> = peers
 
+    fun disconnect(onStatus: (String) -> Unit = {}) {
+        val p2pManager = manager ?: return onStatus("此设备不支持 Wi-Fi 直连。")
+        val p2pChannel = channel ?: return onStatus("Wi-Fi 直连初始化失败。")
+        p2pManager.removeGroup(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                updateStatus("Wi-Fi 直连已断开。")
+                AppLog.d("WifiDirect", "removeGroup success")
+                onStatus("Wi-Fi 直连已断开，可以重新发现并连接其他设备。")
+            }
+
+            override fun onFailure(reason: Int) {
+                updateStatus("Wi-Fi 直连断开失败：$reason")
+                AppLog.d("WifiDirect", "removeGroup failure reason=$reason")
+                onStatus("Wi-Fi 直连断开失败：$reason")
+            }
+        })
+    }
+
     @SuppressLint("MissingPermission")
     fun connect(peer: WifiDirectPeer, onConnected: (WifiP2pInfo) -> Unit = {}) {
         AppLog.d("WifiDirect", "connect requested peer=${peer.name}/${peer.address}")

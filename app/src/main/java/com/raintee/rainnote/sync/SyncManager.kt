@@ -45,6 +45,10 @@ class SyncManager(context: Context) {
 
     fun wifiDirectPeers(): List<WifiDirectPeer> = wifiDirectSyncManager.currentPeers()
 
+    fun disconnectWifiDirect(onStatus: (String) -> Unit = {}) {
+        wifiDirectSyncManager.disconnect(onStatus)
+    }
+
     fun startWifiDirectReceiver(onStatus: (String) -> Unit = {}) {
         wifiDirectSyncManager.receivePayloadOnce(
             responsePayload = { buildLocalPayload() },

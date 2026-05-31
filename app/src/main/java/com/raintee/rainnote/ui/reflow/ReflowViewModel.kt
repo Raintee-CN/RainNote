@@ -44,6 +44,13 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun disconnectWifiDirect() {
+        syncManager.disconnectWifiDirect {
+            _prompt.postValue(it)
+            _text.postValue(buildText() + "\n\n$it")
+        }
+    }
+
     fun acceptPending(noteIds: Set<String>) {
         val count = syncManager.acceptPendingNotes(noteIds)
         _pendingNotes.value = emptyList()

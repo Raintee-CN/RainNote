@@ -50,6 +50,7 @@ class ReflowFragment : Fragment() {
             requestWifiPermissionsIfNeeded()
             viewModel.refresh()
         }
+        binding.buttonDisconnectWifi.setOnClickListener { viewModel.disconnectWifiDirect() }
         binding.buttonExportBackup.setOnClickListener { exportBackup.launch("雨笺备份.json") }
         binding.buttonImportBackup.setOnClickListener { importBackup.launch(arrayOf("application/json", "text/*", "*/*")) }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
