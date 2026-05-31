@@ -25,6 +25,6 @@ class NfcPairingManager(context: Context) {
     fun statusText(): String = when {
         !isNfcAvailable -> "此设备不支持 NFC，后续可使用局域网同步。"
         !isNfcEnabled -> "NFC 未开启，请在系统设置中开启后碰一碰配对。"
-        else -> "NFC 已就绪：碰一碰用于交换设备信息，便签数据由后续同步通道传输。"
+        else -> "NFC 已就绪：碰一碰用于交换设备信息，卡片数据由后续同步通道传输。"
     }
 }

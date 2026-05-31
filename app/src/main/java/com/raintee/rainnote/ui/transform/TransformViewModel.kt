@@ -35,8 +35,8 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
-    fun createNote() {
-        val note = repository.createNote()
+    fun createNote(title: String = "未命名卡片") {
+        val note = repository.createNote(title.ifBlank { "未命名卡片" })
         refresh(note.id)
     }
 

@@ -12,6 +12,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.PopupMenu
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -58,8 +59,7 @@ class TransformFragment : Fragment() {
         binding.recyclerviewBlocks.adapter = blockAdapter
 
         binding.buttonAddNote.setOnClickListener {
-            viewModel.createNote()
-            showEditorPanel()
+            showCreateCardDialog()
         }
         binding.buttonAddBlock.setOnClickListener { pendingFocusBlockId = viewModel.appendBlock() }
         binding.buttonDeleteNote.setOnClickListener {
@@ -108,6 +108,23 @@ class TransformFragment : Fragment() {
                 true
             }
         }.show()
+    }
+
+    private fun showCreateCardDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = "例如：今天的灵感"
+            isSingleLine = true
+            setPadding(32, 16, 32, 0)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("新建卡片")
+            .setView(input)
+            .setNegativeButton("取消", null)
+            .setPositiveButton("创建") { _, _ ->
+                viewModel.createNote(input.text.toString())
+                showEditorPanel()
+            }
+            .show()
     }
 
     private fun isWideLayout(): Boolean = binding.buttonBackToList.visibility == View.GONE

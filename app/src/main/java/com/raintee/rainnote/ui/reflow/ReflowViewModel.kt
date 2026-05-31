@@ -23,7 +23,7 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
 
             ${syncManager.statusText()}
 
-            本机待同步便签：${payload.notes.size} 条
+            本机待同步卡片：${payload.notes.size} 张
             本机待同步行块：${payload.blocks.size} 个
 
             MVP 当前已完成 NFC 配对状态检测和同步包构建。下一步可接入局域网 HTTP、Wi-Fi Direct 或蓝牙传输层。

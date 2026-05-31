@@ -14,7 +14,7 @@ class NoteRepository(context: Context) {
 
     fun getBlocks(noteId: String): List<NoteBlock> = database.getBlocks(noteId)
 
-    fun createNote(title: String = "未命名便签"): Note {
+    fun createNote(title: String = "未命名卡片"): Note {
         val now = System.currentTimeMillis()
         val note = Note(
             id = UUID.randomUUID().toString(),
@@ -38,7 +38,7 @@ class NoteRepository(context: Context) {
     }
 
     fun updateNoteTitle(note: Note, title: String): Note {
-        val updated = note.copy(title = title.ifBlank { "未命名便签" }, updatedAt = System.currentTimeMillis(), version = note.version + 1)
+        val updated = note.copy(title = title.ifBlank { "未命名卡片" }, updatedAt = System.currentTimeMillis(), version = note.version + 1)
         database.upsertNote(updated)
         return updated
     }

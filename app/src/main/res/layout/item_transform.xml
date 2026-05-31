@@ -12,4 +12,4 @@
     android:padding="12dp"
     android:textColor="@color/rn_text"
     android:textSize="15sp"
-    tools:text="未命名便签" />
+    tools:text="未命名卡片" />
