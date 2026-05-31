@@ -8,6 +8,7 @@ class SyncManager(context: Context) {
     private val repository = NoteRepository(context.applicationContext)
     private val pairingManager = NfcPairingManager(context.applicationContext)
     private val bluetoothSyncManager = BluetoothSyncManager(context.applicationContext)
+    private val wifiDirectSyncManager = WifiDirectSyncManager(context.applicationContext)
 
     fun buildLocalPayload(): SyncPayload {
         val notes = repository.getNotes()
@@ -25,4 +26,10 @@ class SyncManager(context: Context) {
     fun statusText(): String = pairingManager.statusText()
 
     fun bluetoothStatusText(): String = bluetoothSyncManager.statusText()
+
+    fun startWifiDirectDiscovery(onPeersChanged: (List<WifiDirectPeer>) -> Unit = {}) {
+        wifiDirectSyncManager.startDiscovery(onPeersChanged)
+    }
+
+    fun wifiDirectStatusText(): String = wifiDirectSyncManager.statusText()
 }

@@ -13,6 +13,9 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     val text: LiveData<String> = _text
 
     fun refresh() {
+        syncManager.startWifiDirectDiscovery {
+            _text.postValue(buildText())
+        }
         _text.value = buildText()
     }
 
@@ -24,6 +27,8 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
             ${syncManager.statusText()}
 
             ${syncManager.bluetoothStatusText()}
+
+            ${syncManager.wifiDirectStatusText()}
 
             本机便签：${payload.notes.size} 个
             本机卡片：${payload.cards.size} 张
