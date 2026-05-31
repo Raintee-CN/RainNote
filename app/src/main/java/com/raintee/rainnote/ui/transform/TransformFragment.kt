@@ -24,6 +24,7 @@ import com.raintee.rainnote.data.Note
 import com.raintee.rainnote.data.NoteBlock
 import com.raintee.rainnote.data.NoteCard
 import com.raintee.rainnote.databinding.FragmentTransformBinding
+import com.raintee.rainnote.databinding.DialogTitleInputBinding
 import com.raintee.rainnote.databinding.ItemNoteBlockBinding
 import com.raintee.rainnote.databinding.ItemNoteCardBinding
 import com.raintee.rainnote.databinding.ItemTransformBinding
@@ -152,17 +153,16 @@ class TransformFragment : Fragment() {
     }
 
     private fun showTitleDialog(title: String, hint: String, onCreate: (String) -> Unit) {
-        val input = EditText(requireContext()).apply {
-            this.hint = hint
-            isSingleLine = true
-            setPadding(32, 16, 32, 0)
-        }
+        val dialogBinding = DialogTitleInputBinding.inflate(layoutInflater)
+        dialogBinding.textTitleHelper.text = hint
+        dialogBinding.editTitleInput.hint = hint
         AlertDialog.Builder(requireContext())
             .setTitle(title)
-            .setView(input)
+            .setView(dialogBinding.root)
             .setNegativeButton("取消", null)
-            .setPositiveButton("创建") { _, _ -> onCreate(input.text.toString()) }
+            .setPositiveButton("创建") { _, _ -> onCreate(dialogBinding.editTitleInput.text.toString()) }
             .show()
+        dialogBinding.editTitleInput.post { dialogBinding.editTitleInput.requestFocus() }
     }
 
     private fun showCardMenu(card: NoteCard, anchor: View) {
