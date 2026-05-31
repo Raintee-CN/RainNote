@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_rainnote_root"
     android:orientation="horizontal"
     android:padding="16dp"
     tools:context=".ui.transform.TransformFragment">
@@ -11,6 +12,7 @@
         android:id="@+id/note_list_panel"
         android:layout_width="280dp"
         android:layout_height="match_parent"
+        android:background="@drawable/bg_card"
         android:orientation="vertical">
 
         <LinearLayout
@@ -23,20 +25,32 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="便签"
-                android:textAppearance="?attr/textAppearanceHeadline6" />
+                android:paddingStart="18dp"
+                android:text="我的便签"
+                android:textAppearance="?attr/textAppearanceHeadline6"
+                android:textColor="@color/rn_text" />
 
             <Button
                 android:id="@+id/button_add_note"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="新建" />
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_button_primary"
+                android:minHeight="44dp"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="新建"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview_transform"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="10dp"
             android:layout_weight="1" />
     </LinearLayout>
 
@@ -46,7 +60,9 @@
         android:layout_height="match_parent"
         android:layout_marginStart="16dp"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="18dp">
 
         <Button
             android:id="@+id/button_back_to_list"
@@ -62,6 +78,8 @@
             android:hint="便签标题"
             android:inputType="textCapSentences"
             android:singleLine="true"
+            android:textColor="@color/rn_text"
+            android:textColorHint="@color/rn_text_muted"
             android:textSize="22sp" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -77,12 +95,19 @@
             android:id="@+id/button_add_block"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="添加一行" />
+            android:background="@drawable/bg_button_primary"
+            android:text="添加一行"
+            android:textAllCaps="false"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/button_delete_note"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="删除当前便签" />
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_button_danger"
+            android:text="删除当前便签"
+            android:textAllCaps="false"
+            android:textColor="@color/rn_danger" />
     </LinearLayout>
 </LinearLayout>

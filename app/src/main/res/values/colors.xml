@@ -7,4 +7,13 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="rn_bg">#FFF7F8F3</color>
+    <color name="rn_surface">#FFFFFFFF</color>
+    <color name="rn_surface_soft">#FFF0F7EF</color>
+    <color name="rn_primary">#FF71B89A</color>
+    <color name="rn_primary_dark">#FF3D8E75</color>
+    <color name="rn_text">#FF25332E</color>
+    <color name="rn_text_muted">#FF7B8A84</color>
+    <color name="rn_line">#FFE2EBE4</color>
+    <color name="rn_danger">#FFD87B7B</color>
 </resources>
