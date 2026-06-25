@@ -72,19 +72,10 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     private fun buildText(): String {
         val payload = syncManager.buildLocalPayload()
         return """
-            碰一碰同步
-
-            ${syncManager.statusText()}
-
-            ${syncManager.bluetoothStatusText()}
-
-            ${syncManager.wifiDirectStatusText()}
-
-            本机便签：${payload.notes.size} 个
-            本机卡片：${payload.cards.size} 张
-            本机行块：${payload.blocks.size} 个
-
-            点击设备会向对方发送本机数据；收到对方数据后，请在“待接收便签”里选择并点击接收。
+            本机：${payload.notes.size} 个便签 · ${payload.cards.size} 张卡片 · ${payload.blocks.size} 个行块
+            Wi‑Fi 直连：${syncManager.wifiDirectStatusText()}
+            蓝牙：${syncManager.bluetoothStatusText()}
+            流程：扫描设备 → 点击设备发送 → 对方数据出现在待接收区 → 选择后接收
         """.trimIndent()
     }
 }

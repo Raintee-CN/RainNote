@@ -55,12 +55,44 @@ class ReflowFragment : Fragment() {
         binding.buttonImportBackup.setOnClickListener { importBackup.launch(arrayOf("application/json", "text/*", "*/*")) }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
         viewModel.prompt.observe(viewLifecycleOwner) { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
-        viewModel.peers.observe(viewLifecycleOwner) { adapter.submitList(it) }
-        viewModel.pendingNotes.observe(viewLifecycleOwner) { pendingAdapter.submitList(it) }
-        binding.buttonAcceptPending.setOnClickListener { viewModel.acceptPending(pendingAdapter.selectedIds()) }
+        viewModel.peers.observe(viewLifecycleOwner) { peers ->
+            adapter.submitList(peers)
+            binding.textPeerEmpty.visibility = if (peers.isEmpty()) View.VISIBLE else View.GONE
+        }
+        viewModel.pendingNotes.observe(viewLifecycleOwner) { notes ->
+            pendingAdapter.submitList(notes) { updatePendingActions(notes.size) }
+            binding.textPendingEmpty.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
+            binding.textPendingTitle.text = if (notes.isEmpty()) "2. 确认接收" else "2. 确认接收（${notes.size} 个待处理）"
+        }
+        binding.buttonSelectAllPending.setOnClickListener {
+            pendingAdapter.selectAll()
+            updatePendingActions(pendingAdapter.itemCount)
+        }
+        binding.buttonClearPending.setOnClickListener {
+            pendingAdapter.clearSelection()
+            updatePendingActions(pendingAdapter.itemCount)
+        }
+        binding.buttonAcceptPending.setOnClickListener {
+            val selectedIds = pendingAdapter.selectedIds()
+            if (selectedIds.isEmpty()) {
+                Toast.makeText(requireContext(), "请先选择要接收的便签", Toast.LENGTH_SHORT).show()
+            } else {
+                viewModel.acceptPending(selectedIds)
+                pendingAdapter.clearSelection()
+                updatePendingActions(0)
+            }
+        }
         requestWifiPermissionsIfNeeded()
         viewModel.refresh()
         return binding.root
+    }
+
+    private fun updatePendingActions(totalCount: Int) {
+        val selectedCount = pendingAdapter.selectedIds().size
+        binding.buttonAcceptPending.isEnabled = totalCount > 0 && selectedCount > 0
+        binding.buttonAcceptPending.text = if (selectedCount > 0) "接收选中的 $selectedCount 个便签" else "接收选中的便签"
+        binding.buttonSelectAllPending.isEnabled = totalCount > 0
+        binding.buttonClearPending.isEnabled = selectedCount > 0
     }
 
     private fun requestWifiPermissionsIfNeeded() {
@@ -108,7 +140,7 @@ private class WifiPeerViewHolder(
     private val onClick: (WifiDirectPeer) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(peer: WifiDirectPeer) {
-        binding.textWifiPeer.text = "${peer.name}\n${peer.address}"
+        binding.textWifiPeer.text = "${peer.name}\n${peer.address}\n点击发送本机数据"
         binding.root.setOnClickListener { onClick(peer) }
     }
 }
@@ -133,6 +165,17 @@ private class PendingNoteAdapter : ListAdapter<PendingSyncNote, PendingNoteViewH
     }
 
     fun selectedIds(): Set<String> = selected.toSet()
+
+    fun selectAll() {
+        selected.clear()
+        selected.addAll(currentList.map { it.id })
+        notifyDataSetChanged()
+    }
+
+    fun clearSelection() {
+        selected.clear()
+        notifyDataSetChanged()
+    }
 }
 
 private class PendingNoteViewHolder(
@@ -140,7 +183,8 @@ private class PendingNoteViewHolder(
     private val onClick: (PendingSyncNote) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(note: PendingSyncNote, selected: Boolean) {
-        binding.textPendingNote.text = "${note.title}\n卡片 ${note.cardCount} 张，行块 ${note.blockCount} 个，字符 ${note.charCount} 个"
+        val prefix = if (selected) "已选择" else "未选择"
+        binding.textPendingNote.text = "$prefix · ${note.title}\n卡片 ${note.cardCount} 张，行块 ${note.blockCount} 个，字符 ${note.charCount} 个"
         binding.textPendingNote.isChecked = selected
         binding.root.setOnClickListener { onClick(note) }
     }
