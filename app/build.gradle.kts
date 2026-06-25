@@ -1,11 +1,13 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 android {
     namespace = "com.raintee.rainnote"
@@ -18,7 +20,7 @@ android {
     defaultConfig {
         applicationId = "com.raintee.rainnote"
         minSdk = 29
-        targetSdk = 36
+        targetSdk = 29
         versionCode = 1
         versionName = "1.0"
 
@@ -40,6 +42,12 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
     }
 }
 
