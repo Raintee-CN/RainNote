@@ -5,6 +5,7 @@ plugins {
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 
 android {
     namespace = "com.raintee.rainnote"
@@ -42,14 +43,11 @@ android {
     }
 }
 
-androidComponents {
-    onVariants { variant ->
-        val buildTime = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
-        variant.outputs.forEach { output ->
-            val versionName = variant.outputs.first().versionName.orNull ?: "dev"
-            val versionCode = variant.outputs.first().versionCode.orNull?.toString() ?: "0"
-            output.outputFileName.set("yujian-v${versionName}-${versionCode}-${variant.name}-${buildTime}.apk")
-        }
+android.applicationVariants.all {
+    val buildTime = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+    outputs.all {
+        (this as BaseVariantOutputImpl).outputFileName =
+            "yujian-v${versionName}-${versionCode}-${name}-${buildTime}.apk"
     }
 }
 

@@ -1,14 +1,19 @@
 pluginManagement {
     repositories {
-        google {
+        maven("http://127.0.0.1:30080/maven/google/") {
+            isAllowInsecureProtocol = true
             content {
                 includeGroupByRegex("com\\.android.*")
                 includeGroupByRegex("com\\.google.*")
                 includeGroupByRegex("androidx.*")
             }
         }
-        mavenCentral()
-        gradlePluginPortal()
+        maven("http://127.0.0.1:30080/maven/central/") {
+            isAllowInsecureProtocol = true
+        }
+        maven("http://127.0.0.1:30080/maven/gradle-plugin/") {
+            isAllowInsecureProtocol = true
+        }
     }
 }
 plugins {
@@ -17,8 +22,12 @@ plugins {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        google()
-        mavenCentral()
+        maven("http://127.0.0.1:30080/maven/google/") {
+            isAllowInsecureProtocol = true
+        }
+        maven("http://127.0.0.1:30080/maven/central/") {
+            isAllowInsecureProtocol = true
+        }
     }
 }
 
