@@ -168,6 +168,15 @@ class NoteDatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         writableDatabase.update("note_blocks", ContentValues().apply { put("deleted_at", deletedAt) }, "id = ?", arrayOf(blockId))
     }
 
+    fun hardDeleteCard(cardId: String) {
+        writableDatabase.delete("note_blocks", "card_id = ?", arrayOf(cardId))
+        writableDatabase.delete("note_cards", "id = ?", arrayOf(cardId))
+    }
+
+    fun hardDeleteBlock(blockId: String) {
+        writableDatabase.delete("note_blocks", "id = ?", arrayOf(blockId))
+    }
+
     private fun Note.toValues() = ContentValues().apply {
         put("id", id)
         put("title", title)

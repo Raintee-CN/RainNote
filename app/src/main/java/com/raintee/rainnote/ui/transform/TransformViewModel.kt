@@ -9,6 +9,9 @@ import com.raintee.rainnote.data.Note
 import com.raintee.rainnote.data.NoteBlock
 import com.raintee.rainnote.data.NoteCard
 import com.raintee.rainnote.data.NoteRepository
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.UUID
 
 data class CardEditorItem(
     val card: NoteCard,
@@ -149,6 +152,77 @@ class TransformViewModel(application: Application) : AndroidViewModel(applicatio
         val note = _state.value?.selectedNote ?: return
         repository.deleteNote(note.id)
         refresh(null)
+    }
+
+    fun editorJson(): String {
+        val state = _state.value ?: return JSONObject().put("cards", JSONArray()).toString()
+        return JSONObject()
+            .put("cards", JSONArray(state.cards.map { item ->
+                JSONObject()
+                    .put("id", item.card.id)
+                    .put("title", item.card.title)
+                    .put("sortOrder", item.card.sortOrder)
+                    .put("blocks", JSONArray(item.blocks.map { block ->
+                        JSONObject()
+                            .put("id", block.id)
+                            .put("type", block.type.storageName)
+                            .put("content", block.content)
+                            .put("sortOrder", block.sortOrder)
+                    }))
+            }))
+            .toString()
+    }
+
+    fun saveEditorJson(json: String) {
+        val note = _state.value?.selectedNote ?: return
+        val root = runCatching { JSONObject(json) }.getOrNull() ?: return
+        val cardsJson = root.optJSONArray("cards") ?: return
+        val now = System.currentTimeMillis()
+        val cards = mutableListOf<NoteCard>()
+        val blocksByCardId = mutableMapOf<String, List<NoteBlock>>()
+        for (cardIndex in 0 until cardsJson.length()) {
+            val cardJson = cardsJson.optJSONObject(cardIndex) ?: continue
+            val cardId = cardJson.optString("id").ifBlank { UUID.randomUUID().toString() }
+            val card = NoteCard(
+                id = cardId,
+                noteId = note.id,
+                title = cardJson.optString("title").ifBlank { "未命名卡片" },
+                sortOrder = cardIndex,
+                createdAt = now,
+                updatedAt = now
+            )
+            cards += card
+            val blocksJson = cardJson.optJSONArray("blocks") ?: JSONArray()
+            val blocks = mutableListOf<NoteBlock>()
+            for (blockIndex in 0 until blocksJson.length()) {
+                val blockJson = blocksJson.optJSONObject(blockIndex) ?: continue
+                blocks += NoteBlock(
+                    id = blockJson.optString("id").ifBlank { UUID.randomUUID().toString() },
+                    noteId = note.id,
+                    cardId = cardId,
+                    type = BlockType.fromStorageName(blockJson.optString("type")),
+                    content = blockJson.optString("content"),
+                    sortOrder = blockIndex,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            }
+            blocksByCardId[cardId] = blocks.ifEmpty {
+                listOf(
+                    NoteBlock(
+                        id = UUID.randomUUID().toString(),
+                        noteId = note.id,
+                        cardId = cardId,
+                        type = BlockType.PlainText,
+                        content = "",
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+            }
+        }
+        if (cards.isNotEmpty()) repository.replaceNoteContent(note.id, cards, blocksByCardId)
     }
 
     private fun loadCards(noteId: String): List<CardEditorItem> {

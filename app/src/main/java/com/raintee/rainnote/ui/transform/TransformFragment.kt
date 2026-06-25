@@ -1,6 +1,7 @@
 package com.raintee.rainnote.ui.transform
 
 import android.graphics.Typeface
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.TextWatcher
 import android.view.KeyEvent
@@ -8,6 +9,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.webkit.JavascriptInterface
+import android.webkit.WebView
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
@@ -28,6 +31,7 @@ import com.raintee.rainnote.databinding.DialogTitleInputBinding
 import com.raintee.rainnote.databinding.ItemNoteBlockBinding
 import com.raintee.rainnote.databinding.ItemNoteCardBinding
 import com.raintee.rainnote.databinding.ItemTransformBinding
+import org.json.JSONObject
 
 class TransformFragment : Fragment() {
 
@@ -35,14 +39,14 @@ class TransformFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: TransformViewModel
     private lateinit var noteAdapter: NoteAdapter
-    private lateinit var cardAdapter: CardAdapter
-    private lateinit var cardTouchHelper: ItemTouchHelper
     private var titleWatcher: TextWatcher? = null
     private var pendingFocusBlockId: String? = null
     private var pendingFocusCardId: String? = null
     private var bindingTitle = false
     private var allNotes: List<Note> = emptyList()
     private lateinit var editorBackCallback: OnBackPressedCallback
+    private var editorReady = false
+    private var renderedNoteId: String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         viewModel = ViewModelProvider(this)[TransformViewModel::class.java]
@@ -52,32 +56,12 @@ class TransformFragment : Fragment() {
             viewModel.selectNote(it)
             showEditorPanel()
         }
-        cardAdapter = CardAdapter(
-            onCardTitleChanged = viewModel::updateCardTitle,
-            onCardLongPressed = ::showCardMenu,
-            onCardDragStarted = { holder -> cardTouchHelper.startDrag(holder) },
-            onAddRowClicked = { card -> pendingFocusBlockId = viewModel.appendBlock(card) },
-            onContentChanged = viewModel::updateBlock,
-            onTypeClicked = ::showTypeMenu,
-            onDeleteClicked = ::confirmDeleteBlock,
-            onEmptyBackspace = { block -> pendingFocusBlockId = viewModel.deleteBlock(block) },
-            onMoveClicked = viewModel::moveBlock,
-            onMarkdownClicked = viewModel::appendMarkdown,
-            onEnterPressed = { block -> pendingFocusBlockId = viewModel.insertBlockAfter(block) }
-        )
 
         binding.recyclerviewTransform.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewTransform.adapter = noteAdapter
-        binding.recyclerviewBlocks.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerviewBlocks.adapter = cardAdapter
-        cardTouchHelper = ItemTouchHelper(CardMoveCallback(
-            onMove = { from, to -> cardAdapter.moveItem(from, to) },
-            onMoveFinished = { viewModel.reorderCards(cardAdapter.currentCardIds()) }
-        ))
-        cardTouchHelper.attachToRecyclerView(binding.recyclerviewBlocks)
+        setupEditorWebView()
 
         binding.buttonAddNote.setOnClickListener { showCreateNoteDialog() }
-        binding.buttonAddBlock.setOnClickListener { showCreateCardDialog() }
         binding.buttonDeleteNote.setOnClickListener {
             confirmDeleteNote()
         }
@@ -102,14 +86,7 @@ class TransformFragment : Fragment() {
         noteAdapter.selectedId = state.selectedNote?.id
         allNotes = state.notes
         applyNoteFilter()
-        cardAdapter.focusBlockId = pendingFocusBlockId
-        cardAdapter.focusCardId = pendingFocusCardId
-        cardAdapter.submitList(state.cards) {
-            pendingFocusBlockId = null
-            pendingFocusCardId = null
-            cardAdapter.focusBlockId = null
-            cardAdapter.focusCardId = null
-        }
+        renderEditorIfNeeded(state)
         titleWatcher?.let { binding.editNoteTitle.removeTextChangedListener(it) }
         val title = state.selectedNote?.title.orEmpty()
         if (binding.editNoteTitle.text.toString() != title && !binding.editNoteTitle.hasFocus()) {
@@ -122,6 +99,36 @@ class TransformFragment : Fragment() {
             if (!bindingTitle && state.selectedNote != null && text.toString() != state.selectedNote.title) {
                 viewModel.updateTitle(text.toString())
             }
+        }
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupEditorWebView() {
+        binding.editorWebview.settings.javaScriptEnabled = true
+        binding.editorWebview.settings.domStorageEnabled = true
+        binding.editorWebview.overScrollMode = WebView.OVER_SCROLL_NEVER
+        binding.editorWebview.addJavascriptInterface(EditorBridge(), "AndroidEditor")
+        binding.editorWebview.webViewClient = object : android.webkit.WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                editorReady = true
+                renderEditorIfNeeded(viewModel.state.value ?: return)
+            }
+        }
+        binding.editorWebview.loadUrl("file:///android_asset/editor/index.html")
+    }
+
+    private fun renderEditorIfNeeded(state: NoteEditorState) {
+        val noteId = state.selectedNote?.id ?: return
+        if (!editorReady || renderedNoteId == noteId) return
+        renderedNoteId = noteId
+        val json = JSONObject.quote(viewModel.editorJson())
+        binding.editorWebview.evaluateJavascript("window.RainNoteEditor.render(JSON.parse($json));", null)
+    }
+
+    private inner class EditorBridge {
+        @JavascriptInterface
+        fun save(json: String) {
+            requireActivity().runOnUiThread { viewModel.saveEditorJson(json) }
         }
     }
 
@@ -230,8 +237,11 @@ class TransformFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (::viewModel.isInitialized && editorReady) {
+            binding.editorWebview.evaluateJavascript("window.RainNoteEditor.saveNow();", null)
+        }
         binding.recyclerviewTransform.adapter = null
-        binding.recyclerviewBlocks.adapter = null
+        binding.editorWebview.removeJavascriptInterface("AndroidEditor")
         _binding = null
     }
 }

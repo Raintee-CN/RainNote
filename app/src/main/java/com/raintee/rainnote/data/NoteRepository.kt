@@ -122,6 +122,22 @@ class NoteRepository(context: Context) {
         }
     }
 
+    fun replaceNoteContent(noteId: String, cards: List<NoteCard>, blocksByCardId: Map<String, List<NoteBlock>>) {
+        val existingCards = database.getCards(noteId)
+        val incomingCardIds = cards.map { it.id }.toSet()
+        existingCards.filterNot { it.id in incomingCardIds }.forEach { database.hardDeleteCard(it.id) }
+        cards.forEachIndexed { index, card ->
+            database.upsertCard(card.copy(sortOrder = index, updatedAt = System.currentTimeMillis(), deletedAt = null))
+            val existingBlocks = database.getBlocks(card.id)
+            val blocks = blocksByCardId[card.id].orEmpty()
+            val incomingBlockIds = blocks.map { it.id }.toSet()
+            existingBlocks.filterNot { it.id in incomingBlockIds }.forEach { database.hardDeleteBlock(it.id) }
+            blocks.forEachIndexed { blockIndex, block ->
+                database.upsertBlock(block.copy(sortOrder = blockIndex, updatedAt = System.currentTimeMillis(), deletedAt = null))
+            }
+        }
+    }
+
     fun reorderCards(noteId: String, orderedCardIds: List<String>) {
         val cardsById = database.getCards(noteId).associateBy { it.id }
         orderedCardIds.forEachIndexed { index, cardId ->

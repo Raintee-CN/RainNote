@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>RainNote Editor</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+  <div id="toolbar" class="toolbar">
+    <button data-cmd="bold">B</button>
+    <button data-cmd="italic">I</button>
+    <button data-cmd="underline">U</button>
+    <button data-cmd="strikeThrough">S</button>
+    <button data-cmd="insertUnorderedList">列表</button>
+    <button data-cmd="formatBlock" data-value="blockquote">引用</button>
+    <button id="addCard">加卡片</button>
+    <button id="addBlock">加文本</button>
+    <button id="addCode">加代码</button>
+  </div>
+  <main id="editor" class="editor"></main>
+  <script src="editor.js"></script>
+</body>
+</html>
