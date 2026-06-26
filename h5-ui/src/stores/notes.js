@@ -8,12 +8,17 @@ export const useNotesStore = defineStore('notes', {
     cards: [],
     loading: false,
     saving: false,
+    error: '',
   }),
   actions: {
     async loadNotes() {
       this.loading = true
+      this.error = ''
       try {
         this.notes = await api.listNotes()
+      } catch (error) {
+        this.error = error
+        throw error
       } finally {
         this.loading = false
       }
@@ -29,10 +34,14 @@ export const useNotesStore = defineStore('notes', {
     },
     async loadNote(noteId) {
       this.loading = true
+      this.error = ''
       try {
         const detail = await api.getNote(noteId)
         this.note = detail.note
         this.cards = detail.cards || []
+      } catch (error) {
+        this.error = error
+        throw error
       } finally {
         this.loading = false
       }
@@ -40,11 +49,15 @@ export const useNotesStore = defineStore('notes', {
     async saveCurrent() {
       if (!this.note) return
       this.saving = true
+      this.error = ''
       try {
         this.note = await api.updateNote(this.note.id, this.note.title || '未命名便签')
         const detail = await api.replaceNoteContent(this.note.id, this.cards)
         this.note = detail.note
         this.cards = detail.cards || []
+      } catch (error) {
+        this.error = error
+        throw error
       } finally {
         this.saving = false
       }

@@ -9,10 +9,18 @@
 body {
   margin: 0;
   background: var(--pc-bg);
+  color: #20202a;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
 }
 
 .pc-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr) 280px;
   gap: 22px;
@@ -102,6 +110,12 @@ body {
   text-align: left;
   background: rgba(245, 247, 255, .9);
   cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.note-row:hover {
+  transform: translateY(-1px);
+  background: #eef1ff;
 }
 
 .note-row.active {
@@ -132,6 +146,14 @@ body {
   margin-bottom: 20px;
 }
 
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .title-input {
   width: min(680px, 70vw);
   border: 0;
@@ -160,9 +182,16 @@ body {
   box-shadow: 0 14px 34px rgba(48, 44, 83, .12);
 }
 
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .card-title {
   width: 100%;
-  margin-bottom: 14px;
+  min-width: 0;
   border: 0;
   outline: 0;
   background: transparent;
@@ -195,6 +224,12 @@ body {
   font-size: 20px;
   font-weight: 900;
   cursor: pointer;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.add-card:hover {
+  transform: translateY(-2px);
+  background: #fff2d2;
 }
 
 .status-card h3 {
@@ -219,5 +254,42 @@ body {
 
   .inspector {
     display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .pc-shell {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .workspace-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace-actions {
+    justify-content: flex-start;
+  }
+
+  .title-input {
+    width: 100%;
+    font-size: 32px;
+  }
+
+  .note-list,
+  .card-grid {
+    max-height: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

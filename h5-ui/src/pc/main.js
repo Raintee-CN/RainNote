@@ -1,11 +1,15 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
+import { ElAlert, ElButton, ElEmpty, ElInput, ElOption, ElSelect, ElTag } from 'element-plus'
 import 'element-plus/dist/index.css'
 import './pc.css'
 import PcApp from './PcApp.vue'
 
-createApp(PcApp)
-  .use(createPinia())
-  .use(ElementPlus)
-  .mount('#app')
+const app = createApp(PcApp)
+
+app.use(createPinia())
+;[ElAlert, ElButton, ElEmpty, ElInput, ElOption, ElSelect, ElTag].forEach((component) => {
+  app.component(component.name, component)
+})
+
+app.mount('#app')

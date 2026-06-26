@@ -10,9 +10,23 @@
 
     <van-form ref="formRef" @submit="connect">
       <van-cell-group inset class="glass-group">
-        <van-field v-model="connection.baseUrl" label="服务地址" placeholder="http://192.168.0.8:48622" clearable />
-        <van-field v-model="connection.token" label="访问码" placeholder="设置页显示的 6 位数字" clearable />
+        <van-field
+          v-model="connection.baseUrl"
+          label="服务地址"
+          placeholder="http://192.168.0.8:48622"
+          clearable
+          :rules="[{ required: true, message: '请输入服务地址' }]"
+        />
+        <van-field
+          v-model="connection.token"
+          label="访问码"
+          placeholder="设置页显示的 6 位数字"
+          maxlength="6"
+          clearable
+          :rules="[{ required: true, message: '请输入访问码' }]"
+        />
       </van-cell-group>
+      <van-notice-bar v-if="errorText" class="inline-error" wrapable :scrollable="false" type="danger" :text="errorText" />
       <div class="action-area">
         <van-button block round type="primary" native-type="submit" :loading="loading">连接</van-button>
       </div>
@@ -26,11 +40,13 @@ import { useRouter } from 'vue-router'
 import { showFailToast, showSuccessToast } from 'vant'
 import { useConnectionStore } from '../stores/connection'
 import { health } from '../api/notes'
+import { errorMessage } from '../api/client'
 import { runMotion } from '../utils/motion'
 
 const router = useRouter()
 const connection = useConnectionStore()
 const loading = ref(false)
+const errorText = ref('')
 const heroRef = ref(null)
 const formRef = ref(null)
 
@@ -53,6 +69,8 @@ onMounted(() => {
 })
 
 async function connect() {
+  errorText.value = ''
+  connection.normalize()
   runMotion(({ animate }) => {
     animate('.action-area .van-button', { scale: [1, 0.97, 1], duration: 420, ease: 'outBack' })
   })
@@ -65,7 +83,8 @@ async function connect() {
     showSuccessToast('连接成功')
     router.replace('/notes')
   } catch (error) {
-    showFailToast('连接失败，请检查地址')
+    errorText.value = errorMessage(error, '连接失败，请检查地址和访问码')
+    showFailToast(errorText.value)
   } finally {
     loading.value = false
   }
