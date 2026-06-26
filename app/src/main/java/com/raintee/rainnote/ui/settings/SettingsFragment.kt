@@ -4,10 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.raintee.rainnote.databinding.FragmentSettingsBinding
+import com.raintee.rainnote.server.RainNoteAccessToken
+import com.raintee.rainnote.server.RainNoteServerManager
+import java.net.NetworkInterface
 
 class SettingsFragment : Fragment() {
 
@@ -28,11 +30,28 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textSettings
         settingsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
+            binding.textSettings.text = it
+        }
+        renderServerInfo()
+        binding.buttonRefreshToken.setOnClickListener {
+            RainNoteAccessToken.reset(requireContext())
+            renderServerInfo()
         }
         return root
+    }
+
+    private fun renderServerInfo() {
+        val host = localIpv4Address() ?: "手机IP"
+        binding.textServerUrl.text = "访问地址：http://$host:${RainNoteServerManager.PORT}/web"
+        binding.textAccessToken.text = "访问码：${RainNoteAccessToken.get(requireContext())}"
+    }
+
+    private fun localIpv4Address(): String? {
+        return NetworkInterface.getNetworkInterfaces().asSequence()
+            .flatMap { it.inetAddresses.asSequence() }
+            .firstOrNull { !it.isLoopbackAddress && it.hostAddress?.contains(':') == false }
+            ?.hostAddress
     }
 
     override fun onDestroyView() {

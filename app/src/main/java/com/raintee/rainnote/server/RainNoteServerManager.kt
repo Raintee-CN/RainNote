@@ -18,6 +18,7 @@ object RainNoteServerManager {
         val appContext = context.applicationContext
         server = RainNoteKtorServer(
             service = service,
+            tokenProvider = { RainNoteAccessToken.get(appContext) },
             webAssetProvider = { path ->
                 runCatching { appContext.assets.open("web/$path").use { it.readBytes() } }.getOrNull()
             }
