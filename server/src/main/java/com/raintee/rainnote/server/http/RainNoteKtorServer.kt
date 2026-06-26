@@ -15,6 +15,8 @@ import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.receiveText
+import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -27,7 +29,8 @@ class RainNoteKtorServer(
     private val service: RainNoteService,
     private val port: Int = DEFAULT_PORT,
     private val host: String = "0.0.0.0",
-    private val tokenProvider: () -> String? = { null }
+    private val tokenProvider: () -> String? = { null },
+    private val webAssetProvider: ((String) -> ByteArray?)? = null
 ) {
     private var engine: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
 
@@ -43,6 +46,19 @@ class RainNoteKtorServer(
                     call.respondJson(
                         "{\"ok\":true,\"app\":\"RainNote\",\"server\":\"ktor\",\"port\":$port}"
                     )
+                }
+
+                get("/web") {
+                    call.respondRedirect("/web/", permanent = false)
+                }
+
+                get("/web/") {
+                    call.respondWebAsset("index.html", webAssetProvider)
+                }
+
+                get("/web/{...}") {
+                    val path = call.parameters.getAll("...").orEmpty().joinToString("/").ifBlank { "index.html" }
+                    call.respondWebAsset(path, webAssetProvider)
                 }
 
                 get("/api/notes") {
@@ -178,4 +194,27 @@ private suspend fun ApplicationCall.respondCors(status: HttpStatusCode, body: St
     response.headers.append(HttpHeaders.AccessControlAllowMethods, "GET,POST,PUT,DELETE,OPTIONS")
     response.headers.append(HttpHeaders.AccessControlAllowHeaders, "Content-Type,X-RainNote-Token")
     respondText(body, ContentType.Application.Json, status)
+}
+
+private suspend fun ApplicationCall.respondWebAsset(path: String, provider: ((String) -> ByteArray?)?) {
+    val normalized = path.trimStart('/').ifBlank { "index.html" }
+    val bytes = provider?.invoke(normalized) ?: provider?.invoke("index.html")
+    if (bytes == null) {
+        respondCors(HttpStatusCode.NotFound, RainNoteJson.error("not_found", "Web asset not found"))
+        return
+    }
+    response.headers.append(HttpHeaders.CacheControl, if (normalized == "index.html") "no-cache" else "public, max-age=31536000")
+    respondBytes(bytes, contentType = contentTypeFor(normalized), status = HttpStatusCode.OK)
+}
+
+private fun contentTypeFor(path: String): ContentType = when (path.substringAfterLast('.', "").lowercase()) {
+    "html" -> ContentType.Text.Html
+    "js" -> ContentType.Application.JavaScript
+    "css" -> ContentType.Text.CSS
+    "json" -> ContentType.Application.Json
+    "svg" -> ContentType.Image.SVG
+    "png" -> ContentType.Image.PNG
+    "jpg", "jpeg" -> ContentType.Image.JPEG
+    "ico" -> ContentType.Image.XIcon
+    else -> ContentType.Application.OctetStream
 }

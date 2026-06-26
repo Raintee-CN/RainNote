@@ -15,7 +15,13 @@ object RainNoteServerManager {
         if (server != null) return
         val service = RainNoteRepositoryService(context.applicationContext)
         toolsInstance = RainNoteTools(service)
-        server = RainNoteKtorServer(service).also { it.start() }
+        val appContext = context.applicationContext
+        server = RainNoteKtorServer(
+            service = service,
+            webAssetProvider = { path ->
+                runCatching { appContext.assets.open("web/$path").use { it.readBytes() } }.getOrNull()
+            }
+        ).also { it.start() }
         AppLog.d("RainNoteServer", "listening on http://0.0.0.0:$PORT")
     }
 
