@@ -14,6 +14,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.request.path
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondRedirect
@@ -57,7 +58,7 @@ class RainNoteKtorServer(
                 }
 
                 get("/web/{...}") {
-                    val path = call.parameters.getAll("...").orEmpty().joinToString("/").ifBlank { "index.html" }
+                    val path = call.request.path().removePrefix("/web/").ifBlank { "index.html" }
                     call.respondWebAsset(path, webAssetProvider)
                 }
 
@@ -198,7 +199,7 @@ private suspend fun ApplicationCall.respondCors(status: HttpStatusCode, body: St
 
 private suspend fun ApplicationCall.respondWebAsset(path: String, provider: ((String) -> ByteArray?)?) {
     val normalized = path.trimStart('/').ifBlank { "index.html" }
-    val bytes = provider?.invoke(normalized) ?: provider?.invoke("index.html")
+    val bytes = provider?.invoke(normalized) ?: if (normalized.hasFileExtension()) null else provider?.invoke("index.html")
     if (bytes == null) {
         respondCors(HttpStatusCode.NotFound, RainNoteJson.error("not_found", "Web asset not found"))
         return
@@ -218,3 +219,5 @@ private fun contentTypeFor(path: String): ContentType = when (path.substringAfte
     "ico" -> ContentType.Image.XIcon
     else -> ContentType.Application.OctetStream
 }
+
+private fun String.hasFileExtension(): Boolean = substringAfterLast('/', this).contains('.')
