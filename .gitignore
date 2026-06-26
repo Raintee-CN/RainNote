@@ -11,9 +11,11 @@
 /.idea/deviceManager.xml
 /.idea/shelf/
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
 /app/release/
+h5-ui/node_modules/
+h5-ui/dist/

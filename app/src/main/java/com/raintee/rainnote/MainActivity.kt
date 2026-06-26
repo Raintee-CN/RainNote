@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.raintee.rainnote.debug.AppLog
 import com.raintee.rainnote.debug.HttpLogServer
 import com.raintee.rainnote.databinding.ActivityMainBinding
+import com.raintee.rainnote.server.RainNoteServerManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         HttpLogServer.start()
+        RainNoteServerManager.start(this)
         AppLog.d("MainActivity", "RainNote started; log server port=${HttpLogServer.PORT}")
         setSupportActionBar(binding.appBarMain.toolbar)
 

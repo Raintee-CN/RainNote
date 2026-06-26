@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "RainNote"
 include(":app")
+include(":server")

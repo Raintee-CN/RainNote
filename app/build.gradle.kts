@@ -20,7 +20,7 @@ android {
     defaultConfig {
         applicationId = "com.raintee.rainnote"
         minSdk = 29
-        targetSdk = 29
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -60,6 +60,7 @@ android.applicationVariants.all {
 }
 
 dependencies {
+    implementation(project(":server"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
