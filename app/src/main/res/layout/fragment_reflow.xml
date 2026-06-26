@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:background="@drawable/bg_rainnote_root"
-    android:orientation="vertical"
-    android:padding="12dp"
     tools:context=".ui.reflow.ReflowFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_paper"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_paper"
+            android:orientation="vertical"
+            android:padding="14dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -67,16 +72,16 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="220dp"
         android:layout_marginTop="10dp"
-        android:layout_weight="1"
         android:background="@drawable/bg_paper"
         android:padding="10dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerview_wifi_peers"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:nestedScrollingEnabled="false" />
 
         <TextView
             android:id="@+id/text_peer_empty"
@@ -113,7 +118,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerview_pending_notes"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="false" />
 
             <TextView
                 android:id="@+id/text_pending_empty"
@@ -181,3 +187,4 @@
             android:text="导入备份" />
     </LinearLayout>
 </LinearLayout>
+</ScrollView>

@@ -5,7 +5,7 @@
         <p class="eyebrow">RAINNOTE</p>
         <h2>便签库</h2>
       </div>
-      <van-button size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
+      <van-button v-if="!connection.embedded" size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
     </header>
 
     <van-search v-model="keyword" shape="round" background="transparent" placeholder="搜索标题" />
@@ -32,9 +32,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showConfirmDialog, showSuccessToast } from 'vant'
+import { useConnectionStore } from '../stores/connection'
 import { useNotesStore } from '../stores/notes'
 
 const router = useRouter()
+const connection = useConnectionStore()
 const notes = useNotesStore()
 const keyword = ref('')
 
