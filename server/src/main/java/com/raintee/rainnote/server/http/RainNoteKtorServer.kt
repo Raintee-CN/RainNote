@@ -50,16 +50,37 @@ class RainNoteKtorServer(
                 }
 
                 get("/web") {
-                    call.respondRedirect("/web/", permanent = false)
+                    call.respondRedirect("/web-mobile/", permanent = false)
                 }
 
                 get("/web/") {
-                    call.respondWebAsset("index.html", webAssetProvider)
+                    call.respondRedirect("/web-mobile/", permanent = false)
                 }
 
-                get("/web/{...}") {
-                    val path = call.request.path().removePrefix("/web/").ifBlank { "index.html" }
-                    call.respondWebAsset(path, webAssetProvider)
+                get("/web-mobile") {
+                    call.respondRedirect("/web-mobile/", permanent = false)
+                }
+
+                get("/web-mobile/") {
+                    call.respondWebAsset("web-mobile", "index.html", webAssetProvider)
+                }
+
+                get("/web-mobile/{...}") {
+                    val path = call.request.path().removePrefix("/web-mobile/").ifBlank { "index.html" }
+                    call.respondWebAsset("web-mobile", path, webAssetProvider)
+                }
+
+                get("/web-pc") {
+                    call.respondRedirect("/web-pc/", permanent = false)
+                }
+
+                get("/web-pc/") {
+                    call.respondWebAsset("web-pc", "index.html", webAssetProvider)
+                }
+
+                get("/web-pc/{...}") {
+                    val path = call.request.path().removePrefix("/web-pc/").ifBlank { "index.html" }
+                    call.respondWebAsset("web-pc", path, webAssetProvider)
                 }
 
                 get("/api/notes") {
@@ -197,9 +218,10 @@ private suspend fun ApplicationCall.respondCors(status: HttpStatusCode, body: St
     respondText(body, ContentType.Application.Json, status)
 }
 
-private suspend fun ApplicationCall.respondWebAsset(path: String, provider: ((String) -> ByteArray?)?) {
+private suspend fun ApplicationCall.respondWebAsset(root: String, path: String, provider: ((String) -> ByteArray?)?) {
     val normalized = path.trimStart('/').ifBlank { "index.html" }
-    val bytes = provider?.invoke(normalized) ?: if (normalized.hasFileExtension()) null else provider?.invoke("index.html")
+    val assetPath = "$root/$normalized"
+    val bytes = provider?.invoke(assetPath) ?: if (normalized.hasFileExtension()) null else provider?.invoke("$root/index.html")
     if (bytes == null) {
         respondCors(HttpStatusCode.NotFound, RainNoteJson.error("not_found", "Web asset not found"))
         return

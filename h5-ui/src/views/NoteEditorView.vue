@@ -1,18 +1,21 @@
 <template>
-  <main class="page editor-page">
-    <van-nav-bar title="编辑便签" left-text="返回" left-arrow @click-left="router.back()">
+  <main class="mobile-shell editor-page">
+    <van-nav-bar title="编辑便签" left-text="返回" left-arrow fixed placeholder @click-left="router.back()">
       <template #right>
         <span class="save-link" @click="save">保存</span>
       </template>
     </van-nav-bar>
 
     <van-skeleton :loading="notes.loading" title :row="6">
-      <van-cell-group inset>
+      <van-cell-group inset class="glass-group">
         <van-field v-model="title" label="标题" placeholder="便签标题" @blur="syncTitle" />
       </van-cell-group>
 
       <section v-for="card in notes.cards" :key="card.id" class="card-editor">
-        <van-field v-model="card.title" label="卡片" placeholder="卡片标题" />
+        <div class="card-title-row">
+          <span>卡片</span>
+          <input v-model="card.title" placeholder="卡片标题" />
+        </div>
         <van-cell-group inset>
           <div v-for="block in card.blocks" :key="block.id" class="block-editor">
             <van-field v-model="block.content" type="textarea" autosize rows="2" placeholder="输入内容" />

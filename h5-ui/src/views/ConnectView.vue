@@ -1,15 +1,16 @@
 <template>
-  <main class="page connect-page">
-    <section class="hero-card">
-      <p class="eyebrow">RainNote 协同管理</p>
-      <h1>连接手机端服务</h1>
-      <p class="hint">在手机和当前设备处于同一局域网时，输入 Android 端服务地址。</p>
+  <main class="mobile-shell connect-page">
+    <section class="mobile-hero">
+      <div class="hero-orb"></div>
+      <p class="eyebrow">RAINNOTE MOBILE</p>
+      <h1>把手机里的便签，交给浏览器管理</h1>
+      <p class="hint">打开 Android 设置页里的协同服务地址，并输入访问码。</p>
     </section>
 
     <van-form @submit="connect">
-      <van-cell-group inset>
-        <van-field v-model="connection.baseUrl" label="服务地址" placeholder="http://192.168.0.8:48622" />
-        <van-field v-model="connection.token" label="访问码" placeholder="可选" />
+      <van-cell-group inset class="glass-group">
+        <van-field v-model="connection.baseUrl" label="服务地址" placeholder="http://192.168.0.8:48622" clearable />
+        <van-field v-model="connection.token" label="访问码" placeholder="设置页显示的 6 位数字" clearable />
       </van-cell-group>
       <div class="action-area">
         <van-button block round type="primary" native-type="submit" :loading="loading">连接</van-button>

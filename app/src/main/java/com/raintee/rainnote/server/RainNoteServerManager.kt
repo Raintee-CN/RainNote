@@ -20,7 +20,7 @@ object RainNoteServerManager {
             service = service,
             tokenProvider = { RainNoteAccessToken.get(appContext) },
             webAssetProvider = { path ->
-                runCatching { appContext.assets.open("web/$path").use { it.readBytes() } }.getOrNull()
+                runCatching { appContext.assets.open(path).use { it.readBytes() } }.getOrNull()
             }
         ).also { it.start() }
         AppLog.d("RainNoteServer", "listening on http://0.0.0.0:$PORT")

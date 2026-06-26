@@ -1,12 +1,23 @@
 <template>
-  <main class="page">
-    <van-nav-bar title="RainNote" left-text="连接" left-arrow @click-left="router.push('/connect')" />
-    <van-search v-model="keyword" placeholder="搜索便签" />
+  <main class="mobile-shell notes-page">
+    <header class="mobile-topbar">
+      <div>
+        <p class="eyebrow">RAINNOTE</p>
+        <h2>便签库</h2>
+      </div>
+      <van-button size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
+    </header>
+
+    <van-search v-model="keyword" shape="round" background="transparent" placeholder="搜索标题" />
 
     <van-empty v-if="!filteredNotes.length && !notes.loading" description="暂无便签" />
-    <van-list v-else>
+    <van-list v-else class="note-stack">
       <van-swipe-cell v-for="note in filteredNotes" :key="note.id">
-        <van-cell :title="note.title" :label="formatTime(note.updatedAt)" is-link @click="router.push(`/notes/${note.id}`)" />
+        <article class="note-tile" @click="router.push(`/notes/${note.id}`)">
+          <div class="note-pin"></div>
+          <h3>{{ note.title }}</h3>
+          <p>{{ formatTime(note.updatedAt) }}</p>
+        </article>
         <template #right>
           <van-button square type="danger" text="删除" @click="remove(note.id)" />
         </template>

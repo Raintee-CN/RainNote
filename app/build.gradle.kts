@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val h5Dir = rootProject.layout.projectDirectory.dir("h5-ui")
 val h5DistDir = h5Dir.dir("dist")
-val webAssetsDir = layout.projectDirectory.dir("src/main/assets/web")
+val webAssetsDir = layout.projectDirectory.dir("src/main/assets")
 val npmCommand = if (System.getProperty("os.name").lowercase().contains("windows")) "npm.cmd" else "npm"
 
 val installH5Dependencies by tasks.registering(Exec::class) {

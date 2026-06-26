@@ -19,4 +19,5 @@ local.properties
 /app/release/
 h5-ui/node_modules/
 h5-ui/dist/
-app/src/main/assets/web/
+app/src/main/assets/web-mobile/
+app/src/main/assets/web-pc/

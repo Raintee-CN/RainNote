@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "npm run build:mobile && npm run build:pc",
+    "build:mobile": "vite build --mode mobile --outDir dist/web-mobile",
+    "build:pc": "vite build --mode pc --outDir dist/web-pc && node scripts/fix-pc-index.mjs",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "latest",
     "axios": "latest",
+    "element-plus": "^2.12.0",
     "pinia": "latest",
     "vant": "^4.9.23",
     "vite": "latest",
