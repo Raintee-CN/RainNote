@@ -7,7 +7,7 @@
     </van-nav-bar>
 
     <van-skeleton :loading="notes.loading" title :row="6">
-      <van-cell-group inset class="glass-group">
+      <van-cell-group inset class="glass-group title-group" ref="titleGroupRef">
         <van-field v-model="title" label="标题" placeholder="便签标题" @blur="syncTitle" />
       </van-cell-group>
 
@@ -37,19 +37,26 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showSuccessToast } from 'vant'
 import { useNotesStore } from '../stores/notes'
+import { runMotion } from '../utils/motion'
 
 const route = useRoute()
 const router = useRouter()
 const notes = useNotesStore()
 const title = ref('')
+const titleGroupRef = ref(null)
 
 onMounted(async () => {
   await notes.loadNote(route.params.id)
   title.value = notes.note?.title || ''
+  await nextTick()
+  runMotion(({ animate, stagger }) => {
+    animate(titleGroupRef.value?.$el || titleGroupRef.value, { opacity: [0, 1], y: [18, 0], duration: 560, ease: 'outExpo' })
+    animate('.card-editor', { opacity: [0, 1], y: [30, 0], scale: [0.98, 1], duration: 680, delay: stagger(80), ease: 'outExpo' })
+  })
 })
 
 function syncTitle() {
@@ -63,6 +70,11 @@ function addCard() {
     sortOrder: notes.cards.length,
     blocks: [],
   })
+  nextTick(() => {
+    runMotion(({ animate }) => {
+      animate('.card-editor:last-of-type', { opacity: [0, 1], y: [34, 0], scale: [0.94, 1], duration: 580, ease: 'outBack' })
+    })
+  })
 }
 
 function addBlock(card) {
@@ -73,6 +85,11 @@ function addBlock(card) {
     content: '',
     sortOrder: card.blocks.length,
   })
+  nextTick(() => {
+    runMotion(({ animate }) => {
+      animate('.block-editor:last-of-type', { opacity: [0, 1], x: [18, 0], duration: 440, ease: 'outExpo' })
+    })
+  })
 }
 
 function removeBlock(card, block) {
@@ -82,6 +99,9 @@ function removeBlock(card, block) {
 async function save() {
   syncTitle()
   await notes.saveCurrent()
+  runMotion(({ animate }) => {
+    animate('.save-link, .action-area .van-button:last-child', { scale: [1, 1.08, 1], duration: 460, ease: 'outBack' })
+  })
   showSuccessToast('已保存')
 }
 </script>

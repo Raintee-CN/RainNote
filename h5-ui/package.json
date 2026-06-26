@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue": "latest",
+    "animejs": "4.5.0",
     "axios": "latest",
     "element-plus": "^2.12.0",
     "pinia": "latest",
