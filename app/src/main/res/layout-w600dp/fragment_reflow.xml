@@ -1,51 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_rainnote_root"
-    android:orientation="vertical"
-    android:padding="16dp"
+    android:fillViewport="true"
     tools:context=".ui.reflow.ReflowFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_paper"
-        android:orientation="horizontal"
-        android:padding="14dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="同步中心"
-            android:textColor="@color/rn_text"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/text_reflow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="18dp"
-            android:layout_weight="1"
-            android:maxLines="5"
-            android:textColor="@color/rn_text_muted"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:layout_weight="1"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_paper"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="同步中心"
+                android:textColor="@color/rn_text"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_reflow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:maxLines="8"
+                android:textColor="@color/rn_text_muted"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
             android:orientation="vertical"
             android:padding="12dp">
 
@@ -71,35 +68,37 @@
                 android:layout_height="38dp"
                 android:layout_marginTop="8dp"
                 android:text="断开当前连接" />
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="10dp"
-                android:layout_weight="1">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerview_wifi_peers"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-                <TextView
-                    android:id="@+id/text_peer_empty"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:padding="16dp"
-                    android:text="还没有发现设备\n点击扫描按钮开始搜索"
-                    android:textColor="@color/rn_text_muted" />
-            </FrameLayout>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/bg_paper"
+            android:padding="10dp">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerview_wifi_peers"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:nestedScrollingEnabled="false" />
+
+            <TextView
+                android:id="@+id/text_peer_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="16dp"
+                android:text="还没有发现设备\n点击上方按钮开始扫描"
+                android:textColor="@color/rn_text_muted"
+                android:textSize="15sp" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_card"
             android:orientation="vertical"
             android:padding="12dp">
 
@@ -113,22 +112,21 @@
 
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="8dp"
-                android:layout_weight="1">
+                android:layout_height="170dp"
+                android:layout_marginTop="8dp">
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerview_pending_notes"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"
+                    android:nestedScrollingEnabled="false" />
 
                 <TextView
                     android:id="@+id/text_pending_empty"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:padding="16dp"
-                    android:text="暂无待接收内容\n收到数据后在这里确认导入"
+                    android:text="暂无待接收内容\n收到备份或对方数据后会显示在这里"
                     android:textColor="@color/rn_text_muted" />
             </FrameLayout>
 
@@ -164,29 +162,29 @@
                 android:layout_marginTop="8dp"
                 android:text="接收选中的便签" />
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_export_backup"
+                style="@style/RainNoteButtonSoft"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_weight="1"
+                android:text="导出备份" />
+
+            <Button
+                android:id="@+id/button_import_backup"
+                style="@style/RainNoteButtonSoft"
+                android:layout_width="0dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="导入备份" />
+        </LinearLayout>
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/button_export_backup"
-            style="@style/RainNoteButtonSoft"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_weight="1"
-            android:text="导出备份" />
-
-        <Button
-            android:id="@+id/button_import_backup"
-            style="@style/RainNoteButtonSoft"
-            android:layout_width="0dp"
-            android:layout_height="38dp"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="导入备份" />
-    </LinearLayout>
-</LinearLayout>
+</ScrollView>
