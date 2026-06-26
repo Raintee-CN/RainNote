@@ -15,6 +15,7 @@
         <div class="card-title-row">
           <span>卡片</span>
           <input v-model="card.title" placeholder="卡片标题" />
+          <button type="button" class="card-delete-button" @click="removeCard(card)">删除</button>
         </div>
         <van-cell-group inset>
           <div v-for="block in card.blocks" :key="block.id" class="block-editor">
@@ -39,7 +40,7 @@
 <script setup>
 import { nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showSuccessToast } from 'vant'
+import { showConfirmDialog, showSuccessToast } from 'vant'
 import { useNotesStore } from '../stores/notes'
 import { runMotion } from '../utils/motion'
 
@@ -92,8 +93,22 @@ function addBlock(card) {
   })
 }
 
+async function removeCard(card) {
+  await showConfirmDialog({
+    title: '删除卡片',
+    message: '这张卡片和里面的所有行块都会在保存后删除。',
+    confirmButtonText: '删除',
+    confirmButtonColor: '#ee0a24',
+  })
+  notes.cards = notes.cards
+    .filter((item) => item !== card)
+    .map((item, index) => ({ ...item, sortOrder: index }))
+}
+
 function removeBlock(card, block) {
-  card.blocks = card.blocks.filter((item) => item !== block)
+  card.blocks = card.blocks
+    .filter((item) => item !== block)
+    .map((item, index) => ({ ...item, sortOrder: index }))
 }
 
 async function save() {

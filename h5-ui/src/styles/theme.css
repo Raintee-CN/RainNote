@@ -232,6 +232,21 @@ body::before {
   font-size: 17px;
 }
 
+.card-delete-button {
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.card-delete-button:active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .block-editor {
   padding: 8px 0;
   border-bottom: 1px solid #eef0f5;
