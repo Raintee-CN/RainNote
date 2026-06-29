@@ -41,7 +41,7 @@ class ReflowFragment : Fragment() {
         viewModel = ViewModelProvider(this)[ReflowViewModel::class.java]
         _binding = FragmentReflowBinding.inflate(inflater, container, false)
         adapter = WifiPeerAdapter { viewModel.connectAndSend(it) }
-        pendingAdapter = PendingNoteAdapter()
+        pendingAdapter = PendingNoteAdapter { updatePendingActions(pendingAdapter.itemCount) }
         binding.recyclerviewWifiPeers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerviewWifiPeers.adapter = adapter
         binding.recyclerviewPendingNotes.layoutManager = LinearLayoutManager(requireContext())
@@ -158,14 +158,22 @@ private object WifiPeerDiff : DiffUtil.ItemCallback<WifiDirectPeer>() {
     override fun areContentsTheSame(oldItem: WifiDirectPeer, newItem: WifiDirectPeer) = oldItem == newItem
 }
 
-private class PendingNoteAdapter : ListAdapter<PendingSyncNote, PendingNoteViewHolder>(PendingNoteDiff) {
+private class PendingNoteAdapter(
+    private val onSelectionChanged: () -> Unit
+) : ListAdapter<PendingSyncNote, PendingNoteViewHolder>(PendingNoteDiff) {
     private val selected = mutableSetOf<String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PendingNoteViewHolder {
         return PendingNoteViewHolder(ItemPendingNoteBinding.inflate(LayoutInflater.from(parent.context), parent, false)) { note ->
             if (!selected.add(note.id)) selected.remove(note.id)
             notifyDataSetChanged()
+            onSelectionChanged()
         }
+    }
+
+    override fun onCurrentListChanged(previousList: MutableList<PendingSyncNote>, currentList: MutableList<PendingSyncNote>) {
+        selected.retainAll(currentList.map { it.id }.toSet())
+        onSelectionChanged()
     }
 
     override fun onBindViewHolder(holder: PendingNoteViewHolder, position: Int) {
@@ -178,11 +186,13 @@ private class PendingNoteAdapter : ListAdapter<PendingSyncNote, PendingNoteViewH
         selected.clear()
         selected.addAll(currentList.map { it.id })
         notifyDataSetChanged()
+        onSelectionChanged()
     }
 
     fun clearSelection() {
         selected.clear()
         notifyDataSetChanged()
+        onSelectionChanged()
     }
 }
 

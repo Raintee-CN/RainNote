@@ -57,11 +57,11 @@
     </style>
 
     <style name="RainNoteButtonTiny" parent="RainNoteButtonSoft">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">11sp</item>
     </style>
 
     <style name="RainNoteBottomNavTextActive">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">#FF176B55</item>
     </style>
