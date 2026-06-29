@@ -13,6 +13,8 @@ import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.raintee.rainnote.debug.AppLog
 import org.json.JSONArray
@@ -27,6 +29,7 @@ class WifiDirectSyncManager(context: Context) {
     private val appContext = context.applicationContext
     private val manager = appContext.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
     private val channel = manager?.initialize(appContext, appContext.mainLooper, null)
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var receiver: BroadcastReceiver? = null
     private var peers: List<WifiDirectPeer> = emptyList()
     private var lastStatus: String = "Wi-Fi 直连未启动。"
@@ -220,10 +223,18 @@ class WifiDirectSyncManager(context: Context) {
         }
     }
 
-    private fun requestConnectionInfo(onConnected: (WifiP2pInfo) -> Unit) {
+    private fun requestConnectionInfo(onConnected: (WifiP2pInfo) -> Unit, attempt: Int = 0) {
         val p2pManager = manager ?: return
         val p2pChannel = channel ?: return
-        p2pManager.requestConnectionInfo(p2pChannel) { info -> onConnected(info) }
+        p2pManager.requestConnectionInfo(p2pChannel) { info ->
+            val ready = info.groupFormed && (info.isGroupOwner || info.groupOwnerAddress != null)
+            if (ready || attempt >= CONNECTION_INFO_RETRY_COUNT) {
+                AppLog.d("WifiDirect", "connection info ready=$ready attempt=$attempt groupFormed=${info.groupFormed} owner=${info.isGroupOwner} host=${info.groupOwnerAddress?.hostAddress}")
+                onConnected(info)
+            } else {
+                mainHandler.postDelayed({ requestConnectionInfo(onConnected, attempt + 1) }, CONNECTION_INFO_RETRY_DELAY_MS)
+            }
+        }
     }
 
     private fun updateStatus(value: String) {
@@ -257,6 +268,8 @@ class WifiDirectSyncManager(context: Context) {
 
     companion object {
         const val SYNC_PORT = 48620
+        private const val CONNECTION_INFO_RETRY_COUNT = 10
+        private const val CONNECTION_INFO_RETRY_DELAY_MS = 300L
     }
 }
 

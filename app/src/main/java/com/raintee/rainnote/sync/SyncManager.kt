@@ -57,7 +57,7 @@ class SyncManager(context: Context) {
                 AppLog.d("SyncManager", "received payload json length=${json.length}")
                 pendingPayload = JSONObject(json)
                 val count = pendingNotes().size
-                onStatus("已收到同步数据，待选择接收 $count 个卡片集。")
+                onStatus("已收到对方数据，待选择接收 $count 个卡片集。")
             },
             onError = { error -> onStatus("Wi-Fi 直连接收失败：${error.message}") }
         )
@@ -129,28 +129,28 @@ class SyncManager(context: Context) {
             AppLog.d("SyncManager", "connectionInfo peer=${peer.name} isGroupOwner=${info.isGroupOwner} groupOwner=${info.groupOwnerAddress?.hostAddress}")
             if (info.isGroupOwner) {
                 startWifiDirectReceiver(onStatus)
-                onStatus("本机是 Wi-Fi 直连组主，正在等待 ${peer.name} 发送同步数据。")
+                onStatus("已连接 ${peer.name}，正在等待对方建立交换通道。")
                 return@connect
             }
             val host = info.groupOwnerAddress
             if (host == null) {
                 AppLog.d("SyncManager", "connectAndSend no groupOwnerAddress peer=${peer.name}")
-                onStatus("已连接，但未获取到对方地址。")
+                onStatus("已连接，但未获取到交换地址，请稍后重试。")
                 return@connect
             }
             Thread {
                 try {
-                    AppLog.d("SyncManager", "sending payload to peer=${peer.name} host=${host.hostAddress}")
+                    AppLog.d("SyncManager", "exchanging payload with peer=${peer.name} host=${host.hostAddress}")
                     val response = wifiDirectSyncManager.sendPayload(host, buildLocalPayload())
                     if (!response.isNullOrBlank()) {
                         pendingPayload = JSONObject(response)
-                        onStatus("已向 ${peer.name} 发送同步数据，并收到对方数据，待选择接收 ${pendingNotes().size} 个卡片集。")
+                        onStatus("已和 ${peer.name} 完成数据交换，待选择接收 ${pendingNotes().size} 个卡片集。")
                     } else {
-                        onStatus("已向 ${peer.name} 发送同步数据。")
+                        onStatus("已向 ${peer.name} 发送本机数据，但未收到对方数据。")
                     }
                 } catch (error: Throwable) {
-                    AppLog.e("SyncManager", "send payload failed peer=${peer.name}", error)
-                    onStatus("发送到 ${peer.name} 失败：${error.message}")
+                    AppLog.e("SyncManager", "exchange payload failed peer=${peer.name}", error)
+                    onStatus("和 ${peer.name} 交换数据失败：${error.message}")
                 }
             }.start()
         }
