@@ -1,6 +1,6 @@
 <template>
   <main class="mobile-shell editor-page">
-    <van-nav-bar title="编辑便签" left-text="返回" left-arrow fixed placeholder @click-left="router.back()">
+    <van-nav-bar title="编辑卡片集" left-text="返回" left-arrow fixed placeholder @click-left="router.back()">
       <template #right>
         <span class="save-link" @click="save">保存</span>
       </template>
@@ -8,7 +8,7 @@
 
     <van-skeleton :loading="notes.loading" title :row="6">
       <van-cell-group inset class="glass-group title-group" ref="titleGroupRef">
-        <van-field v-model="title" label="标题" placeholder="便签标题" @blur="syncTitle" />
+        <van-field v-model="title" label="标题" placeholder="卡片集标题" @blur="syncTitle" />
       </van-cell-group>
 
       <van-notice-bar v-if="errorText" class="inline-error" wrapable :scrollable="false" type="danger">
@@ -18,8 +18,8 @@
         </template>
       </van-notice-bar>
 
-      <van-empty v-if="!notes.loading && !notes.note" description="便签不存在或已被删除">
-        <van-button round type="primary" @click="router.replace('/notes')">返回便签库</van-button>
+      <van-empty v-if="!notes.loading && !notes.note" description="卡片集不存在或已被删除">
+        <van-button round type="primary" @click="router.replace('/notes')">返回卡片集库</van-button>
       </van-empty>
 
       <section v-for="card in notes.cards" :key="card.clientKey || card.id" class="card-editor">
@@ -81,7 +81,7 @@ onBeforeRouteLeave(async () => {
   try {
     await showConfirmDialog({
       title: '放弃未保存修改？',
-      message: '当前便签还有未保存的修改，离开后会丢失。',
+      message: '当前卡片集还有未保存的修改，离开后会丢失。',
       confirmButtonText: '离开',
       cancelButtonText: '继续编辑',
     })
@@ -102,12 +102,12 @@ async function loadNote() {
     title.value = notes.note?.title || ''
     savedSnapshot.value = snapshot()
   } catch (error) {
-    errorText.value = errorMessage(error, '加载便签失败，请重试')
+    errorText.value = errorMessage(error, '加载卡片集失败，请重试')
   }
 }
 
 function syncTitle() {
-  if (notes.note) notes.note.title = title.value || '未命名便签'
+  if (notes.note) notes.note.title = title.value || '未命名卡片集'
 }
 
 function addCard() {
@@ -196,7 +196,7 @@ function normalizeCards() {
 
 function snapshot() {
   return JSON.stringify({
-    title: title.value || '未命名便签',
+    title: title.value || '未命名卡片集',
     cards: notes.cards.map((card, cardIndex) => ({
       id: card.id,
       title: card.title || '未命名卡片',

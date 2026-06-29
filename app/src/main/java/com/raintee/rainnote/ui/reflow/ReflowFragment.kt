@@ -51,7 +51,7 @@ class ReflowFragment : Fragment() {
             viewModel.refresh()
         }
         binding.buttonDisconnectWifi.setOnClickListener { viewModel.disconnectWifiDirect() }
-        binding.buttonExportBackup.setOnClickListener { exportBackup.launch("雨笺备份.json") }
+        binding.buttonExportBackup.setOnClickListener { exportBackup.launch("雨笺卡片集备份.json") }
         binding.buttonImportBackup.setOnClickListener { importBackup.launch(arrayOf("application/json", "text/*", "*/*")) }
         viewModel.text.observe(viewLifecycleOwner) { binding.textReflow.text = it }
         viewModel.prompt.observe(viewLifecycleOwner) { Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show() }
@@ -62,7 +62,7 @@ class ReflowFragment : Fragment() {
         viewModel.pendingNotes.observe(viewLifecycleOwner) { notes ->
             pendingAdapter.submitList(notes) { updatePendingActions(notes.size) }
             binding.textPendingEmpty.visibility = if (notes.isEmpty()) View.VISIBLE else View.GONE
-            binding.textPendingTitle.text = if (notes.isEmpty()) "2. 确认接收" else "2. 确认接收（${notes.size} 个待处理）"
+            binding.textPendingTitle.text = if (notes.isEmpty()) "2. 确认接收" else "2. 确认接收（${notes.size} 个卡片集待处理）"
         }
         binding.buttonSelectAllPending.setOnClickListener {
             pendingAdapter.selectAll()
@@ -75,7 +75,7 @@ class ReflowFragment : Fragment() {
         binding.buttonAcceptPending.setOnClickListener {
             val selectedIds = pendingAdapter.selectedIds()
             if (selectedIds.isEmpty()) {
-                Toast.makeText(requireContext(), "请先选择要接收的便签", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "请先选择要接收的卡片集", Toast.LENGTH_SHORT).show()
             } else {
                 viewModel.acceptPending(selectedIds)
                 pendingAdapter.clearSelection()
@@ -90,7 +90,7 @@ class ReflowFragment : Fragment() {
     private fun updatePendingActions(totalCount: Int) {
         val selectedCount = pendingAdapter.selectedIds().size
         binding.buttonAcceptPending.isEnabled = totalCount > 0 && selectedCount > 0
-        binding.buttonAcceptPending.text = if (selectedCount > 0) "接收选中的 $selectedCount 个便签" else "接收选中的便签"
+        binding.buttonAcceptPending.text = if (selectedCount > 0) "接收选中的 $selectedCount 个卡片集" else "接收选中的卡片集"
         binding.buttonSelectAllPending.isEnabled = totalCount > 0
         binding.buttonClearPending.isEnabled = selectedCount > 0
     }
@@ -106,15 +106,23 @@ class ReflowFragment : Fragment() {
     }
 
     private fun writeBackup(uri: Uri) {
-        requireContext().contentResolver.openOutputStream(uri)?.use { output ->
-            output.write(viewModel.exportBackupJson().toByteArray(Charsets.UTF_8))
+        try {
+            requireContext().contentResolver.openOutputStream(uri)?.use { output ->
+                output.write(viewModel.exportBackupJson().toByteArray(Charsets.UTF_8))
+            }
+            Toast.makeText(requireContext(), "卡片集备份已导出", Toast.LENGTH_SHORT).show()
+        } catch (error: Throwable) {
+            Toast.makeText(requireContext(), "导出失败：${error.message}", Toast.LENGTH_SHORT).show()
         }
-        Toast.makeText(requireContext(), "备份已导出", Toast.LENGTH_SHORT).show()
     }
 
     private fun readBackup(uri: Uri) {
-        val json = requireContext().contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-        viewModel.loadBackupJson(json)
+        try {
+            val json = requireContext().contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            viewModel.loadBackupJson(json)
+        } catch (error: Throwable) {
+            Toast.makeText(requireContext(), "导入失败：${error.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroyView() {

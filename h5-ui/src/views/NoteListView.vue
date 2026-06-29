@@ -3,7 +3,7 @@
     <header class="mobile-topbar" ref="topbarRef">
       <div>
         <p class="eyebrow">RAINNOTE</p>
-        <h2>便签库</h2>
+        <h2>卡片集库</h2>
       </div>
       <van-button v-if="!connection.embedded" size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
     </header>
@@ -20,10 +20,10 @@
     <van-skeleton :loading="notes.loading" title :row="5">
       <van-empty
         v-if="!filteredNotes.length"
-        :description="keyword.trim() ? '没有匹配的便签' : '暂无便签，创建第一条吧'"
+        :description="keyword.trim() ? '没有匹配的卡片集' : '暂无卡片集，创建第一条吧'"
       >
         <van-button round type="primary" @click="keyword.trim() ? (keyword = '') : openCreateDialog()">
-          {{ keyword.trim() ? '清空搜索' : '新建便签' }}
+          {{ keyword.trim() ? '清空搜索' : '新建卡片集' }}
         </van-button>
       </van-empty>
     </van-skeleton>
@@ -46,12 +46,12 @@
 
     <van-dialog
       v-model:show="createDialogVisible"
-      title="新建便签"
+      title="新建卡片集"
       show-cancel-button
       confirm-button-text="创建"
       :before-close="beforeCreateClose"
     >
-      <van-field v-model="newTitle" autofocus label="标题" placeholder="未命名便签" maxlength="40" clearable />
+      <van-field v-model="newTitle" autofocus label="标题" placeholder="未命名卡片集" maxlength="40" clearable />
     </van-dialog>
   </main>
 </template>
@@ -72,7 +72,7 @@ const keyword = ref('')
 const errorText = ref('')
 const deletingId = ref('')
 const createDialogVisible = ref(false)
-const newTitle = ref('未命名便签')
+const newTitle = ref('未命名卡片集')
 const topbarRef = ref(null)
 const searchRef = ref(null)
 
@@ -100,7 +100,7 @@ watch(filteredNotes, async () => {
 })
 
 function openCreateDialog() {
-  newTitle.value = '未命名便签'
+  newTitle.value = '未命名卡片集'
   createDialogVisible.value = true
 }
 
@@ -112,7 +112,7 @@ async function beforeCreateClose(action) {
 
 async function create() {
   try {
-    const note = await notes.createNote(newTitle.value.trim() || '未命名便签')
+    const note = await notes.createNote(newTitle.value.trim() || '未命名卡片集')
     showSuccessToast('已创建')
     runMotion(({ animate }) => {
       animate('.van-floating-bubble', { rotate: [0, 90], scale: [1, 1.16, 1], duration: 520, ease: 'outBack' })
@@ -128,7 +128,7 @@ async function loadNotes() {
   try {
     await notes.loadNotes()
   } catch (error) {
-    errorText.value = errorMessage(error, '加载便签失败，请重试')
+    errorText.value = errorMessage(error, '加载卡片集失败，请重试')
   }
 }
 
@@ -148,8 +148,8 @@ function animateNotes() {
 async function remove(noteId) {
   try {
     await showConfirmDialog({
-      title: '删除便签？',
-      message: '便签内的卡片和行块都会删除，此操作保存后无法恢复。',
+      title: '删除卡片集？',
+      message: '卡片集内的卡片和行块都会删除，此操作保存后无法恢复。',
       confirmButtonText: '删除',
       confirmButtonColor: '#ee0a24',
     })

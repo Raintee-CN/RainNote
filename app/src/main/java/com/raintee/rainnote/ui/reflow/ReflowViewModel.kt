@@ -54,7 +54,7 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     fun acceptPending(noteIds: Set<String>) {
         val count = syncManager.acceptPendingNotes(noteIds)
         _pendingNotes.value = emptyList()
-        val message = "已接收 $count 个便签。"
+        val message = "已接收 $count 个卡片集。"
         _prompt.value = message
         _text.value = buildText() + "\n\n$message"
     }
@@ -62,9 +62,9 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     fun exportBackupJson(): String = syncManager.exportBackupJson()
 
     fun loadBackupJson(json: String) {
-        val count = syncManager.loadPendingPayload(json)
-        _pendingNotes.value = syncManager.pendingNotes()
-        val message = "已解析备份文件，待确认 $count 个便签。"
+        val count = syncManager.importBackupJson(json)
+        _pendingNotes.value = emptyList()
+        val message = "已导入 $count 个卡片集；同名卡片集已覆盖。"
         _prompt.value = message
         _text.value = buildText() + "\n\n$message"
     }
@@ -72,10 +72,10 @@ class ReflowViewModel(application: Application) : AndroidViewModel(application) 
     private fun buildText(): String {
         val payload = syncManager.buildLocalPayload()
         return """
-            本机：${payload.notes.size} 个便签 · ${payload.cards.size} 张卡片 · ${payload.blocks.size} 个行块
+            本机：${payload.notes.size} 个卡片集 · ${payload.cards.size} 张卡片 · ${payload.blocks.size} 个行块
             Wi‑Fi 直连：${syncManager.wifiDirectStatusText()}
             蓝牙：${syncManager.bluetoothStatusText()}
-            流程：扫描设备 → 点击设备发送 → 对方数据出现在待接收区 → 选择后接收
+            流程：扫描设备 → 点击设备发送 → 对方数据出现在待接收区 → 选择后接收；导入备份会直接按标题覆盖
         """.trimIndent()
     }
 }

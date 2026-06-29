@@ -91,7 +91,7 @@ class RainNoteKtorServer(
                 post("/api/notes") {
                     if (!call.authorized()) return@post
                     val body = RainNoteJson.parseObject(call.receiveText())
-                    call.respondJson(RainNoteJson.note(service.createNote(body.string("title", "未命名便签"))))
+                    call.respondJson(RainNoteJson.note(service.createNote(body.string("title", "未命名卡片集"))))
                 }
 
                 get("/api/notes/{noteId}") {
@@ -105,7 +105,7 @@ class RainNoteKtorServer(
                     if (!call.authorized()) return@put
                     val noteId = call.parameters["noteId"].orEmpty()
                     val body = RainNoteJson.parseObject(call.receiveText())
-                    val note = service.updateNote(noteId, body.string("title", "未命名便签"))
+                    val note = service.updateNote(noteId, body.string("title", "未命名卡片集"))
                     if (note == null) call.respondNotFound() else call.respondJson(RainNoteJson.note(note))
                 }
 

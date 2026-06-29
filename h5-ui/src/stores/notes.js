@@ -24,7 +24,7 @@ export const useNotesStore = defineStore('notes', {
       }
     },
     async createNote(title) {
-      const note = await api.createNote(title || '未命名便签')
+      const note = await api.createNote(title || '未命名卡片集')
       await this.loadNotes()
       return note
     },
@@ -51,7 +51,7 @@ export const useNotesStore = defineStore('notes', {
       this.saving = true
       this.error = ''
       try {
-        this.note = await api.updateNote(this.note.id, this.note.title || '未命名便签')
+        this.note = await api.updateNote(this.note.id, this.note.title || '未命名卡片集')
         const detail = await api.replaceNoteContent(this.note.id, this.cards)
         this.note = detail.note
         this.cards = detail.cards || []

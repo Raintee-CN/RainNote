@@ -3,18 +3,18 @@
     <string name="navigation_drawer_open">打开导航抽屉</string>
     <string name="navigation_drawer_close">关闭导航抽屉</string>
     <string name="nav_header_title">雨笺</string>
-    <string name="nav_header_subtitle">清爽的卡片便签</string>
+    <string name="nav_header_subtitle">清爽的卡片集管理</string>
     <string name="nav_header_desc">导航页头</string>
     <string name="action_settings">设置</string>
 
-    <string name="menu_transform">便签</string>
+    <string name="menu_transform">卡片集</string>
     <string name="menu_reflow">同步</string>
     <string name="menu_slideshow">关于</string>
     <string name="menu_settings">设置</string>
 
     <string name="lorem_ipsum_title">雨笺说明</string>
-    <string name="lorem_ipsum">雨笺支持便签、卡片和行块式记录，可通过同步页进行备份、导入和设备同步。
+    <string name="lorem_ipsum">雨笺支持卡片集、卡片和行块式记录，可通过同步页进行备份、导入和设备同步。
     </string>
     <string name="fab_content_description">执行主要操作</string>
-    <string name="image_view_item_transform_content_description">便签图标</string>
+    <string name="image_view_item_transform_content_description">卡片集图标</string>
 </resources>

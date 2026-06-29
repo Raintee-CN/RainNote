@@ -9,6 +9,7 @@ import com.raintee.rainnote.debug.AppLog
 import com.raintee.rainnote.data.NoteRepository
 import org.json.JSONObject
 import org.json.JSONArray
+import java.util.UUID
 
 class SyncManager(context: Context) {
 
@@ -56,7 +57,7 @@ class SyncManager(context: Context) {
                 AppLog.d("SyncManager", "received payload json length=${json.length}")
                 pendingPayload = JSONObject(json)
                 val count = pendingNotes().size
-                onStatus("已收到同步数据，待选择接收 $count 个便签。")
+                onStatus("已收到同步数据，待选择接收 $count 个卡片集。")
             },
             onError = { error -> onStatus("Wi-Fi 直连接收失败：${error.message}") }
         )
@@ -88,7 +89,7 @@ class SyncManager(context: Context) {
                 add(
                     PendingSyncNote(
                         id = id,
-                        title = item.optString("title", "未命名便签"),
+                        title = item.optString("title", "未命名卡片集"),
                         cardCount = cardCountByNote[id] ?: 0,
                         blockCount = blockCountByNote[id] ?: 0,
                         charCount = charCountByNote[id] ?: 0
@@ -105,6 +106,15 @@ class SyncManager(context: Context) {
         val count = pendingNotes().size
         AppLog.d("SyncManager", "loaded backup payload pendingNotes=$count")
         return count
+    }
+
+    fun importBackupJson(json: String): Int {
+        val root = JSONObject(json)
+        val ids = noteIds(root)
+        applyPayloadJson(root, ids)
+        pendingPayload = null
+        AppLog.d("SyncManager", "importBackupJson imported=${ids.size}")
+        return ids.size
     }
 
     fun acceptPendingNotes(noteIds: Set<String>): Int {
@@ -134,7 +144,7 @@ class SyncManager(context: Context) {
                     val response = wifiDirectSyncManager.sendPayload(host, buildLocalPayload())
                     if (!response.isNullOrBlank()) {
                         pendingPayload = JSONObject(response)
-                        onStatus("已向 ${peer.name} 发送同步数据，并收到对方数据，待选择接收 ${pendingNotes().size} 个便签。")
+                        onStatus("已向 ${peer.name} 发送同步数据，并收到对方数据，待选择接收 ${pendingNotes().size} 个卡片集。")
                     } else {
                         onStatus("已向 ${peer.name} 发送同步数据。")
                     }
@@ -148,58 +158,79 @@ class SyncManager(context: Context) {
 
     private fun applyPayloadJson(root: JSONObject, acceptedNoteIds: Set<String>) {
         AppLog.d("SyncManager", "applyPayloadJson started")
-        val acceptedCardIds = mutableSetOf<String>()
+        val localNotesByTitle = repository.getNotes().associateBy { normalizeTitle(it.title) }
+        val acceptedCardIds = mutableMapOf<String, String>()
+        val targetNoteIds = mutableMapOf<String, String>()
         val notes = root.optJSONArray("notes")
         for (index in 0 until (notes?.length() ?: 0)) {
             val item = notes!!.getJSONObject(index)
-            val noteId = item.getString("id")
-            if (noteId !in acceptedNoteIds) continue
+            val sourceNoteId = item.getString("id")
+            if (sourceNoteId !in acceptedNoteIds) continue
+            val title = item.optString("title", "未命名卡片集")
+            val targetNoteId = localNotesByTitle[normalizeTitle(title)]?.id ?: sourceNoteId
+            targetNoteIds[sourceNoteId] = targetNoteId
             repository.upsertRemoteNote(
                 Note(
-                    id = noteId,
-                    title = item.optString("title", "未命名便签"),
-                    createdAt = item.optLong("createdAt", System.currentTimeMillis()),
+                    id = targetNoteId,
+                    title = title,
+                    createdAt = localNotesByTitle[normalizeTitle(title)]?.createdAt ?: item.optLong("createdAt", System.currentTimeMillis()),
                     updatedAt = item.optLong("updatedAt", System.currentTimeMillis()),
                     version = item.optLong("version", 1L)
                 )
             )
         }
         val cards = root.optJSONArray("cards")
+        val cardsByTargetNoteId = mutableMapOf<String, MutableList<NoteCard>>()
+        val blocksByTargetCardId = mutableMapOf<String, MutableList<NoteBlock>>()
         for (index in 0 until (cards?.length() ?: 0)) {
             val item = cards!!.getJSONObject(index)
-            val noteId = item.getString("noteId")
-            if (noteId !in acceptedNoteIds) continue
-            acceptedCardIds.add(item.getString("id"))
-            repository.upsertRemoteCard(
-                NoteCard(
-                    id = item.getString("id"),
-                    noteId = noteId,
-                    title = item.optString("title", "未命名卡片"),
-                    sortOrder = item.optInt("sortOrder", index),
-                    createdAt = item.optLong("createdAt", System.currentTimeMillis()),
-                    updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
-                )
+            val sourceNoteId = item.getString("noteId")
+            val targetNoteId = targetNoteIds[sourceNoteId] ?: continue
+            val sourceCardId = item.getString("id")
+            val targetCardId = UUID.randomUUID().toString()
+            acceptedCardIds[sourceCardId] = targetCardId
+            val card = NoteCard(
+                id = targetCardId,
+                noteId = targetNoteId,
+                title = item.optString("title", "未命名卡片"),
+                sortOrder = item.optInt("sortOrder", index),
+                createdAt = item.optLong("createdAt", System.currentTimeMillis()),
+                updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
             )
+            cardsByTargetNoteId.getOrPut(targetNoteId) { mutableListOf() }.add(card)
         }
         val blocks = root.optJSONArray("blocks")
         for (index in 0 until (blocks?.length() ?: 0)) {
             val item = blocks!!.getJSONObject(index)
-            if (item.getString("cardId") !in acceptedCardIds) continue
-            repository.upsertRemoteBlock(
-                NoteBlock(
-                    id = item.getString("id"),
-                    noteId = item.optString("noteId"),
-                    cardId = item.getString("cardId"),
-                    type = BlockType.fromStorageName(item.optString("type")),
-                    content = item.optString("content"),
-                    sortOrder = item.optInt("sortOrder", index),
-                    createdAt = item.optLong("createdAt", System.currentTimeMillis()),
-                    updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
-                )
+            val targetCardId = acceptedCardIds[item.getString("cardId")] ?: continue
+            val sourceNoteId = item.optString("noteId")
+            val targetNoteId = targetNoteIds[sourceNoteId] ?: continue
+            val block = NoteBlock(
+                id = UUID.randomUUID().toString(),
+                noteId = targetNoteId,
+                cardId = targetCardId,
+                type = BlockType.fromStorageName(item.optString("type")),
+                content = item.optString("content"),
+                sortOrder = item.optInt("sortOrder", index),
+                createdAt = item.optLong("createdAt", System.currentTimeMillis()),
+                updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
             )
+            blocksByTargetCardId.getOrPut(targetCardId) { mutableListOf() }.add(block)
+        }
+        cardsByTargetNoteId.forEach { (targetNoteId, targetCards) ->
+            repository.replaceNoteContent(targetNoteId, targetCards, blocksByTargetCardId)
         }
         AppLog.d("SyncManager", "applyPayloadJson finished notes=${notes?.length() ?: 0} cards=${cards?.length() ?: 0} blocks=${blocks?.length() ?: 0}")
     }
+
+    private fun noteIds(root: JSONObject): Set<String> {
+        val notes = root.optJSONArray("notes") ?: return emptySet()
+        return buildSet {
+            for (index in 0 until notes.length()) add(notes.getJSONObject(index).getString("id"))
+        }
+    }
+
+    private fun normalizeTitle(title: String): String = title.trim().ifBlank { "未命名卡片集" }
 
     private fun payloadToJson(payload: SyncPayload): JSONObject {
         return JSONObject()

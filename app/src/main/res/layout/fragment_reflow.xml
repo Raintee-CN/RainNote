@@ -162,7 +162,7 @@
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_marginTop="8dp"
-            android:text="接收选中的便签" />
+            android:text="接收选中的卡片集" />
     </LinearLayout>
 
     <LinearLayout

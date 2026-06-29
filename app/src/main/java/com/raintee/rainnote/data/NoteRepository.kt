@@ -16,7 +16,7 @@ class NoteRepository(context: Context) {
 
     fun getBlocks(cardId: String): List<NoteBlock> = database.getBlocks(cardId)
 
-    fun createNote(title: String = "未命名便签"): Note {
+    fun createNote(title: String = "未命名卡片集"): Note {
         val now = System.currentTimeMillis()
         val note = Note(
             id = UUID.randomUUID().toString(),
@@ -29,14 +29,14 @@ class NoteRepository(context: Context) {
         if (title.startsWith("欢迎")) {
             val firstBlock = database.getBlocks(card.id).firstOrNull()
             if (firstBlock != null) {
-                saveBlock(firstBlock.copy(content = "一个便签可以包含多张卡片；每张卡片内可以继续添加文本、富文和代码行。"))
+                saveBlock(firstBlock.copy(content = "一个卡片集可以包含多张卡片；每张卡片内可以继续添加文本、富文和代码行。"))
             }
         }
         return note
     }
 
     fun updateNoteTitle(note: Note, title: String): Note {
-        val updated = note.copy(title = title.ifBlank { "未命名便签" }, updatedAt = System.currentTimeMillis(), version = note.version + 1)
+        val updated = note.copy(title = title.ifBlank { "未命名卡片集" }, updatedAt = System.currentTimeMillis(), version = note.version + 1)
         database.upsertNote(updated)
         return updated
     }

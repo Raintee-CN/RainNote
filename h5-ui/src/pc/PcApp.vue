@@ -5,7 +5,7 @@
         <div class="brand-mark">雨</div>
         <div>
           <p>RainNote Studio</p>
-          <h1>协同便签控制台</h1>
+          <h1>协同卡片集控制台</h1>
         </div>
       </section>
 
@@ -18,10 +18,10 @@
 
       <section class="note-panel">
         <div class="panel-head">
-          <span>便签</span>
+          <span>卡片集</span>
           <el-button text type="primary" :disabled="!connection.connected" @click="create">新建</el-button>
         </div>
-        <el-input v-model="keyword" placeholder="搜索便签" clearable />
+        <el-input v-model="keyword" placeholder="搜索卡片集" clearable />
         <div class="note-list">
           <button
             v-for="note in filteredNotes"
@@ -33,8 +33,8 @@
             <strong>{{ note.title }}</strong>
             <small>{{ formatTime(note.updatedAt) }}</small>
           </button>
-          <el-empty v-if="connection.connected && !filteredNotes.length" :description="keyword ? '没有匹配的便签' : '暂无便签'">
-            <el-button type="primary" @click="keyword ? (keyword = '') : create()">{{ keyword ? '清空搜索' : '新建便签' }}</el-button>
+          <el-empty v-if="connection.connected && !filteredNotes.length" :description="keyword ? '没有匹配的卡片集' : '暂无卡片集'">
+            <el-button type="primary" @click="keyword ? (keyword = '') : create()">{{ keyword ? '清空搜索' : '新建卡片集' }}</el-button>
           </el-empty>
         </div>
       </section>
@@ -44,17 +44,17 @@
       <header class="workspace-head">
         <div>
           <p class="eyebrow">EDITOR</p>
-          <input v-model="title" class="title-input" placeholder="选择或新建一条便签" @blur="syncTitle" />
+          <input v-model="title" class="title-input" placeholder="选择或新建一个卡片集" @blur="syncTitle" />
         </div>
         <div class="workspace-actions">
           <el-tag v-if="dirty" type="warning" effect="light">未保存</el-tag>
-          <el-button type="danger" plain size="large" :disabled="!notes.note" @click="removeCurrentNote">删除便签</el-button>
+          <el-button type="danger" plain size="large" :disabled="!notes.note" @click="removeCurrentNote">删除卡片集</el-button>
           <el-button type="primary" size="large" :disabled="!notes.note" :loading="notes.saving" @click="save">保存全部</el-button>
         </div>
       </header>
 
-      <el-empty v-if="!notes.note" :description="connection.connected ? '选择或新建一条便签' : '连接服务后选择一条便签'">
-        <el-button v-if="connection.connected" type="primary" @click="create">新建便签</el-button>
+      <el-empty v-if="!notes.note" :description="connection.connected ? '选择或新建一个卡片集' : '连接服务后选择一个卡片集'">
+        <el-button v-if="connection.connected" type="primary" @click="create">新建卡片集</el-button>
       </el-empty>
       <div v-else class="card-grid">
         <article v-for="card in notes.cards" :key="card.clientKey || card.id" class="paper-card">
@@ -143,8 +143,8 @@ async function connect() {
 async function create() {
   if (!(await confirmDiscard())) return
   try {
-    const { value } = await ElMessageBox.prompt('请输入便签标题', '新建便签', {
-      inputValue: '未命名便签',
+    const { value } = await ElMessageBox.prompt('请输入卡片集标题', '新建卡片集', {
+      inputValue: '未命名卡片集',
       inputValidator: (value) => Boolean(value?.trim()) || '标题不能为空',
     })
     const note = await notes.createNote(value.trim())
@@ -169,7 +169,7 @@ async function open(id, force = false) {
 }
 
 function syncTitle() {
-  if (notes.note) notes.note.title = title.value || '未命名便签'
+  if (notes.note) notes.note.title = title.value || '未命名卡片集'
 }
 
 function addCard() {
@@ -214,7 +214,7 @@ async function save() {
 async function removeCurrentNote() {
   if (!notes.note) return
   try {
-    await ElMessageBox.confirm('便签内的卡片和行块都会删除，此操作无法恢复。', '删除便签', {
+    await ElMessageBox.confirm('卡片集内的卡片和行块都会删除，此操作无法恢复。', '删除卡片集', {
       type: 'warning',
       confirmButtonText: '删除',
       cancelButtonText: '取消',
@@ -235,7 +235,7 @@ async function removeCurrentNote() {
 async function confirmDiscard() {
   if (!dirty.value) return true
   try {
-    await ElMessageBox.confirm('当前便签还有未保存修改，继续会丢失这些修改。', '放弃修改？', {
+    await ElMessageBox.confirm('当前卡片集还有未保存修改，继续会丢失这些修改。', '放弃修改？', {
       type: 'warning',
       confirmButtonText: '继续',
       cancelButtonText: '留在当前页',
@@ -265,7 +265,7 @@ function normalizeCards() {
 function snapshot() {
   if (!notes.note) return ''
   return JSON.stringify({
-    title: title.value || '未命名便签',
+    title: title.value || '未命名卡片集',
     cards: notes.cards.map((card, cardIndex) => ({
       id: card.id,
       title: card.title || '未命名卡片',

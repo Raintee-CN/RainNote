@@ -14,4 +14,4 @@
     android:padding="14dp"
     android:textColor="@color/rn_text"
     android:textSize="15sp"
-    tools:text="便签标题" />
+    tools:text="卡片集标题" />

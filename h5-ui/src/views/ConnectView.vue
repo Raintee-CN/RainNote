@@ -4,7 +4,7 @@
       <div class="hero-orb"></div>
       <div class="hero-orb hero-orb-small"></div>
       <p class="eyebrow">RAINNOTE MOBILE</p>
-      <h1>把手机里的便签，交给浏览器管理</h1>
+      <h1>把手机里的卡片集，交给浏览器管理</h1>
       <p class="hint">打开 Android 设置页里的协同服务地址，并输入访问码。</p>
     </section>
 
