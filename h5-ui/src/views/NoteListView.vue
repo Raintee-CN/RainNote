@@ -1,19 +1,17 @@
 <template>
-  <main class="mobile-shell notes-page">
-    <header class="mobile-topbar" ref="topbarRef">
-      <div>
-        <p class="eyebrow">RAINNOTE</p>
-        <h2>卡片集库</h2>
-      </div>
-      <van-button v-if="!connection.embedded" size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
-    </header>
+  <main>
+    <van-nav-bar title="卡片集库">
+      <template #right>
+        <van-button v-if="!connection.embedded" size="small" plain type="primary" @click="router.push('/connect')">连接</van-button>
+      </template>
+    </van-nav-bar>
 
-    <van-search ref="searchRef" v-model="keyword" shape="round" background="transparent" placeholder="搜索标题" />
+    <van-search v-model="keyword" placeholder="搜索标题" />
 
-    <van-notice-bar v-if="errorText" class="inline-error" wrapable :scrollable="false" type="danger">
+    <van-notice-bar v-if="errorText" wrapable :scrollable="false" type="danger">
       {{ errorText }}
       <template #right-icon>
-        <button class="notice-action" type="button" @click="loadNotes">重试</button>
+        <van-button size="mini" type="danger" plain @click="loadNotes">重试</van-button>
       </template>
     </van-notice-bar>
 
@@ -28,21 +26,18 @@
       </van-empty>
     </van-skeleton>
 
-    <van-list v-if="filteredNotes.length" class="note-stack">
+    <van-list v-if="filteredNotes.length">
       <van-swipe-cell v-for="note in filteredNotes" :key="note.id">
-        <article class="note-tile" @click="router.push(`/notes/${note.id}`)">
-          <div class="note-pin"></div>
-          <div class="note-glow"></div>
-          <h3>{{ note.title }}</h3>
-          <p>{{ formatTime(note.updatedAt) }}</p>
-        </article>
+        <van-cell :title="note.title" :label="formatTime(note.updatedAt)" is-link @click="router.push(`/notes/${note.id}`)" />
         <template #right>
           <van-button square type="danger" text="删除" :loading="deletingId === note.id" @click="remove(note.id)" />
         </template>
       </van-swipe-cell>
     </van-list>
 
-    <van-floating-bubble axis="xy" icon="plus" magnetic="x" @click="openCreateDialog" />
+    <van-cell-group inset>
+      <van-button block type="primary" @click="openCreateDialog">新建卡片集</van-button>
+    </van-cell-group>
 
     <van-dialog
       v-model:show="createDialogVisible"
@@ -57,13 +52,12 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showConfirmDialog, showDialog, showFailToast, showSuccessToast } from 'vant'
 import { useConnectionStore } from '../stores/connection'
 import { useNotesStore } from '../stores/notes'
 import { errorMessage } from '../api/client'
-import { runMotion } from '../utils/motion'
 
 const router = useRouter()
 const connection = useConnectionStore()
@@ -73,8 +67,6 @@ const errorText = ref('')
 const deletingId = ref('')
 const createDialogVisible = ref(false)
 const newTitle = ref('未命名卡片集')
-const topbarRef = ref(null)
-const searchRef = ref(null)
 
 const filteredNotes = computed(() => {
   const value = keyword.value.trim().toLowerCase()
@@ -83,20 +75,7 @@ const filteredNotes = computed(() => {
 })
 
 onMounted(async () => {
-  runMotion(({ createTimeline }) => {
-    createTimeline({ defaults: { ease: 'outExpo' } })
-      .add(topbarRef.value, { opacity: [0, 1], y: [-18, 0], duration: 640 })
-      .add(searchRef.value?.$el || searchRef.value, { opacity: [0, 1], y: [18, 0], duration: 560 }, '-=420')
-  })
-
   await loadNotes()
-  await nextTick()
-  animateNotes()
-})
-
-watch(filteredNotes, async () => {
-  await nextTick()
-  animateNotes()
 })
 
 function openCreateDialog() {
@@ -114,9 +93,6 @@ async function create() {
   try {
     const note = await notes.createNote(newTitle.value.trim() || '未命名卡片集')
     showSuccessToast('已创建')
-    runMotion(({ animate }) => {
-      animate('.van-floating-bubble', { rotate: [0, 90], scale: [1, 1.16, 1], duration: 520, ease: 'outBack' })
-    })
     router.push(`/notes/${note.id}`)
   } catch (error) {
     showFailToast(errorMessage(error, '创建失败，请重试'))
@@ -130,19 +106,6 @@ async function loadNotes() {
   } catch (error) {
     errorText.value = errorMessage(error, '加载卡片集失败，请重试')
   }
-}
-
-function animateNotes() {
-  runMotion(({ animate, stagger }) => {
-    animate('.note-tile', {
-      opacity: [0, 1],
-      y: [26, 0],
-      rotate: [-1.8, 0],
-      duration: 620,
-      delay: stagger(70),
-      ease: 'outExpo',
-    })
-  })
 }
 
 async function remove(noteId) {

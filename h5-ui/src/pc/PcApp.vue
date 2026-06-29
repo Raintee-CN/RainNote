@@ -1,98 +1,95 @@
 <template>
-  <main class="pc-shell">
-    <aside class="sidebar">
-      <section class="brand-card">
-        <div class="brand-mark">雨</div>
-        <div>
-          <p>RainNote Studio</p>
-          <h1>协同卡片集控制台</h1>
-        </div>
-      </section>
-
-      <section class="connect-card">
-        <el-input v-model="connection.baseUrl" size="large" placeholder="http://手机IP:48622" />
-        <el-input v-model="connection.token" size="large" placeholder="访问码" show-password />
-        <el-button type="primary" size="large" :loading="connecting" @click="connect">连接服务</el-button>
+  <el-container>
+    <el-aside width="320px">
+      <el-card header="RainNote Studio">
+        <p>协同卡片集控制台</p>
+        <el-form label-position="top">
+          <el-form-item label="服务地址">
+            <el-input v-model="connection.baseUrl" placeholder="http://手机IP:48622" />
+          </el-form-item>
+          <el-form-item label="访问码">
+            <el-input v-model="connection.token" placeholder="访问码" show-password />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="connecting" @click="connect">连接服务</el-button>
+          </el-form-item>
+        </el-form>
         <el-alert v-if="errorText" :title="errorText" type="error" show-icon :closable="false" />
-      </section>
+      </el-card>
 
-      <section class="note-panel">
-        <div class="panel-head">
-          <span>卡片集</span>
-          <el-button text type="primary" :disabled="!connection.connected" @click="create">新建</el-button>
-        </div>
+      <el-card header="卡片集">
+        <el-button type="primary" :disabled="!connection.connected" @click="create">新建卡片集</el-button>
         <el-input v-model="keyword" placeholder="搜索卡片集" clearable />
-        <div class="note-list">
-          <button
+        <el-menu :default-active="currentId" @select="open">
+          <el-menu-item
             v-for="note in filteredNotes"
             :key="note.id"
-            class="note-row"
-            :class="{ active: currentId === note.id }"
-            @click="open(note.id)"
+            :index="note.id"
           >
-            <strong>{{ note.title }}</strong>
-            <small>{{ formatTime(note.updatedAt) }}</small>
-          </button>
+            <span>{{ note.title }}</span>
+          </el-menu-item>
+        </el-menu>
           <el-empty v-if="connection.connected && !filteredNotes.length" :description="keyword ? '没有匹配的卡片集' : '暂无卡片集'">
             <el-button type="primary" @click="keyword ? (keyword = '') : create()">{{ keyword ? '清空搜索' : '新建卡片集' }}</el-button>
           </el-empty>
-        </div>
-      </section>
-    </aside>
+      </el-card>
+    </el-aside>
 
-    <section class="workspace">
-      <header class="workspace-head">
-        <div>
-          <p class="eyebrow">EDITOR</p>
-          <input v-model="title" class="title-input" placeholder="选择或新建一个卡片集" @blur="syncTitle" />
-        </div>
-        <div class="workspace-actions">
+    <el-container>
+      <el-header>
+        <el-row align="middle" justify="space-between">
+          <el-col :span="14">
+            <el-input v-model="title" size="large" placeholder="选择或新建一个卡片集" :disabled="!notes.note" @blur="syncTitle" />
+          </el-col>
+          <el-col :span="10">
           <el-tag v-if="dirty" type="warning" effect="light">未保存</el-tag>
           <el-button type="danger" plain size="large" :disabled="!notes.note" @click="removeCurrentNote">删除卡片集</el-button>
           <el-button type="primary" size="large" :disabled="!notes.note" :loading="notes.saving" @click="save">保存全部</el-button>
-        </div>
-      </header>
+          </el-col>
+        </el-row>
+      </el-header>
 
+      <el-main>
       <el-empty v-if="!notes.note" :description="connection.connected ? '选择或新建一个卡片集' : '连接服务后选择一个卡片集'">
         <el-button v-if="connection.connected" type="primary" @click="create">新建卡片集</el-button>
       </el-empty>
-      <div v-else class="card-grid">
-        <article v-for="card in notes.cards" :key="card.clientKey || card.id" class="paper-card">
-          <div class="card-head">
-            <input v-model="card.title" class="card-title" placeholder="卡片标题" />
+      <el-row v-else :gutter="16">
+        <el-col v-for="card in notes.cards" :key="card.clientKey || card.id" :span="12">
+          <el-card>
+            <template #header>
+              <el-row justify="space-between" align="middle">
+                <el-col :span="16">
+                  <el-input v-model="card.title" placeholder="卡片标题" />
+                </el-col>
+                <el-col :span="8">
             <el-button text type="danger" @click="removeCard(card)">删除卡片</el-button>
-          </div>
-          <div class="block-list">
+                </el-col>
+              </el-row>
+            </template>
             <el-empty v-if="!card.blocks?.length" :image-size="72" description="暂无行块" />
-            <div v-for="block in card.blocks" :key="block.clientKey || block.id" class="block-row">
-              <el-select v-model="block.type" class="block-type" size="small">
+            <el-card v-for="block in card.blocks" :key="block.clientKey || block.id">
+              <el-select v-model="block.type" size="small">
                 <el-option label="文本" value="plain_text" />
                 <el-option label="富文" value="rich_text" />
                 <el-option label="代码" value="code_block" />
               </el-select>
               <el-input v-model="block.content" type="textarea" :autosize="{ minRows: 2, maxRows: 8 }" placeholder="写点什么..." />
               <el-button text type="danger" @click="removeBlock(card, block)">删除</el-button>
-            </div>
-          </div>
+            </el-card>
           <el-button plain type="primary" @click="addBlock(card)">添加行块</el-button>
-        </article>
-        <button class="add-card" @click="addCard">+ 新卡片</button>
-      </div>
-    </section>
-
-    <aside class="inspector">
-      <section class="status-card">
-        <p class="eyebrow">SERVICE</p>
-        <h3>{{ connection.connected ? '已连接' : '未连接' }}</h3>
-        <p>{{ connection.baseUrl }}</p>
-      </section>
-      <section class="status-card warm">
-        <p class="eyebrow">WEB</p>
-        <h3>/web-pc</h3>
-        <p>桌面端使用 Element Plus；移动端请访问 /web-mobile。</p>
-      </section>
-    </aside>
-  </main>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <el-empty description="添加新卡片">
+              <el-button type="primary" @click="addCard">添加卡片</el-button>
+            </el-empty>
+          </el-card>
+        </el-col>
+      </el-row>
+      </el-main>
+    </el-container>
+  </el-container>
 </template>
 
 <script setup>

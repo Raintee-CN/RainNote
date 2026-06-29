@@ -1,20 +1,20 @@
 <template>
-  <main class="mobile-shell editor-page">
-    <van-nav-bar title="编辑卡片集" left-text="返回" left-arrow fixed placeholder @click-left="router.back()">
+  <main>
+    <van-nav-bar title="编辑卡片集" left-text="返回" left-arrow @click-left="router.back()">
       <template #right>
-        <span class="save-link" @click="save">保存</span>
+        <van-button size="small" type="primary" :loading="notes.saving" @click="save">保存</van-button>
       </template>
     </van-nav-bar>
 
     <van-skeleton :loading="notes.loading" title :row="6">
-      <van-cell-group inset class="glass-group title-group" ref="titleGroupRef">
+      <van-cell-group inset title="卡片集信息">
         <van-field v-model="title" label="标题" placeholder="卡片集标题" @blur="syncTitle" />
       </van-cell-group>
 
-      <van-notice-bar v-if="errorText" class="inline-error" wrapable :scrollable="false" type="danger">
+      <van-notice-bar v-if="errorText" wrapable :scrollable="false" type="danger">
         {{ errorText }}
         <template #right-icon>
-          <button class="notice-action" type="button" @click="loadNote">重试</button>
+          <van-button size="mini" type="danger" plain @click="loadNote">重试</van-button>
         </template>
       </van-notice-bar>
 
@@ -22,58 +22,59 @@
         <van-button round type="primary" @click="router.replace('/notes')">返回卡片集库</van-button>
       </van-empty>
 
-      <section v-for="card in notes.cards" :key="card.clientKey || card.id" class="card-editor">
-        <div class="card-title-row">
-          <span>卡片</span>
-          <input v-model="card.title" placeholder="卡片标题" />
-          <button type="button" class="card-delete-button" @click="removeCard(card)">删除</button>
-        </div>
-        <van-cell-group inset>
+      <van-cell-group v-for="(card, index) in notes.cards" :key="card.clientKey || card.id" inset :title="`卡片 ${index + 1}`">
+        <van-field v-model="card.title" label="标题" placeholder="卡片标题">
+          <template #button>
+            <van-button size="small" type="danger" plain @click="removeCard(card)">删除</van-button>
+          </template>
+        </van-field>
           <van-empty v-if="!card.blocks?.length" image-size="72" description="这张卡片还没有内容" />
-          <div v-for="block in card.blocks" :key="block.clientKey || block.id" class="block-editor">
-            <van-field v-model="block.content" type="textarea" autosize rows="2" placeholder="输入内容" />
-            <div class="block-actions">
-              <van-tag plain>{{ block.type }}</van-tag>
-              <van-button size="mini" type="danger" plain @click="removeBlock(card, block)">删除</van-button>
-            </div>
-          </div>
+          <van-field
+            v-for="block in card.blocks"
+            :key="block.clientKey || block.id"
+            v-model="block.content"
+            type="textarea"
+            autosize
+            rows="2"
+            :label="block.type"
+            placeholder="输入内容"
+          >
+            <template #button>
+              <van-button size="small" type="danger" plain @click="removeBlock(card, block)">删除</van-button>
+            </template>
+          </van-field>
           <van-button block plain type="primary" @click="addBlock(card)">添加行块</van-button>
-        </van-cell-group>
-      </section>
+      </van-cell-group>
 
-      <div class="action-area">
+      <van-cell-group inset>
         <van-button block plain type="primary" @click="addCard">添加卡片</van-button>
-        <van-button block round type="primary" :loading="notes.saving" @click="save">保存全部</van-button>
-      </div>
+      </van-cell-group>
+
+      <van-action-bar>
+        <van-action-bar-button type="primary" :loading="notes.saving" text="保存全部" @click="save" />
+      </van-action-bar>
     </van-skeleton>
   </main>
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { onBeforeRouteLeave } from 'vue-router'
 import { showConfirmDialog, showFailToast, showSuccessToast } from 'vant'
 import { useNotesStore } from '../stores/notes'
 import { errorMessage } from '../api/client'
-import { runMotion } from '../utils/motion'
 
 const route = useRoute()
 const router = useRouter()
 const notes = useNotesStore()
 const title = ref('')
-const titleGroupRef = ref(null)
 const errorText = ref('')
 const savedSnapshot = ref('')
 let clientId = 0
 
 onMounted(async () => {
   await loadNote()
-  await nextTick()
-  runMotion(({ animate, stagger }) => {
-    animate(titleGroupRef.value?.$el || titleGroupRef.value, { opacity: [0, 1], y: [18, 0], duration: 560, ease: 'outExpo' })
-    animate('.card-editor', { opacity: [0, 1], y: [30, 0], scale: [0.98, 1], duration: 680, delay: stagger(80), ease: 'outExpo' })
-  })
 })
 
 onBeforeRouteLeave(async () => {
@@ -118,11 +119,6 @@ function addCard() {
     sortOrder: notes.cards.length,
     blocks: [],
   })
-  nextTick(() => {
-    runMotion(({ animate }) => {
-      animate('.card-editor:last-of-type', { opacity: [0, 1], y: [34, 0], scale: [0.94, 1], duration: 580, ease: 'outBack' })
-    })
-  })
 }
 
 function addBlock(card) {
@@ -133,11 +129,6 @@ function addBlock(card) {
     type: 'plain_text',
     content: '',
     sortOrder: card.blocks.length,
-  })
-  nextTick(() => {
-    runMotion(({ animate }) => {
-      animate('.block-editor:last-of-type', { opacity: [0, 1], x: [18, 0], duration: 440, ease: 'outExpo' })
-    })
   })
 }
 
@@ -170,9 +161,6 @@ async function save() {
     await notes.saveCurrent()
     normalizeCards()
     savedSnapshot.value = snapshot()
-    runMotion(({ animate }) => {
-      animate('.save-link, .action-area .van-button:last-child', { scale: [1, 1.08, 1], duration: 460, ease: 'outBack' })
-    })
     showSuccessToast('已保存')
   } catch (error) {
     showFailToast(errorMessage(error, '保存失败，请重试'))
