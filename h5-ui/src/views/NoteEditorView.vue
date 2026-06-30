@@ -28,21 +28,51 @@
             <van-button size="small" type="danger" plain @click="removeCard(card)">删除</van-button>
           </template>
         </van-field>
-          <van-empty v-if="!card.blocks?.length" image-size="72" description="这张卡片还没有内容" />
-          <van-field
-            v-for="block in card.blocks"
-            :key="block.clientKey || block.id"
-            v-model="block.content"
-            type="textarea"
-            autosize
-            rows="2"
-            :label="block.type"
-            placeholder="输入内容"
-          >
-            <template #button>
-              <van-button size="small" type="danger" plain @click="removeBlock(card, block)">删除</van-button>
-            </template>
-          </van-field>
+        <van-empty v-if="!card.blocks?.length" image-size="72" description="这张卡片还没有内容" />
+        <van-cell v-for="block in card.blocks" :key="block.clientKey || block.id">
+          <template #icon>
+            <van-button
+              round
+              size="mini"
+              :color="blockTypeColor(block.type)"
+              @touchstart="startTypePress(block)"
+              @touchend="cancelTypePress"
+              @touchcancel="cancelTypePress"
+              @mousedown="startTypePress(block)"
+              @mouseup="cancelTypePress"
+              @mouseleave="cancelTypePress"
+              @click="openTypeSheet(block)"
+            />
+          </template>
+          <template #title>
+            <div
+              v-if="block.type === 'rich_text'"
+              :contenteditable="true"
+              :style="richEditorStyle"
+              @focus="activeRichBlock = block"
+              @blur="syncRichHtml(block, $event)"
+              @input="syncRichHtml(block, $event)"
+              @keydown.delete="removeEmptyRichBlock(card, block, $event)"
+              v-html="safeRichHtml(block.content)"
+            />
+            <van-field
+              v-else
+              v-model="block.content"
+              type="textarea"
+              autosize
+              rows="2"
+              :placeholder="blockPlaceholder(block.type)"
+              :style="blockFieldStyle(block.type)"
+              @keydown.delete="removeEmptyBlock(card, block, $event)"
+            />
+            <van-cell-group v-if="block.type === 'rich_text'" inset>
+              <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('formatBlock', 'h3')">标题</van-button>
+              <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('bold')">加粗</van-button>
+              <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('italic')">斜体</van-button>
+              <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('formatBlock', 'blockquote')">引用</van-button>
+            </van-cell-group>
+          </template>
+        </van-cell>
           <van-button block plain type="primary" @click="addBlock(card)">添加行块</van-button>
       </van-cell-group>
 
@@ -53,6 +83,14 @@
       <van-action-bar>
         <van-action-bar-button type="primary" :loading="notes.saving" text="保存全部" @click="save" />
       </van-action-bar>
+
+      <van-action-sheet
+        v-model:show="typeSheetVisible"
+        :actions="blockTypeActions"
+        cancel-text="取消"
+        description="修改行块类型"
+        @select="selectBlockType"
+      />
     </van-skeleton>
   </main>
 </template>
@@ -71,7 +109,25 @@ const notes = useNotesStore()
 const title = ref('')
 const errorText = ref('')
 const savedSnapshot = ref('')
+const typeSheetVisible = ref(false)
+const activeTypeBlock = ref(null)
+const activeRichBlock = ref(null)
+let typePressTimer = null
 let clientId = 0
+
+const richEditorStyle = {
+  minHeight: '44px',
+  outline: 'none',
+  lineHeight: '1.7',
+  wordBreak: 'break-word',
+  whiteSpace: 'normal',
+}
+
+const blockTypeActions = [
+  { name: '普通文本', value: 'plain_text', color: '#1989fa' },
+  { name: '富文本', value: 'rich_text', color: '#07c160' },
+  { name: '代码块', value: 'code_block', color: '#7232dd' },
+]
 
 onMounted(async () => {
   await loadNote()
@@ -154,6 +210,136 @@ function removeBlock(card, block) {
     .map((item, index) => ({ ...item, sortOrder: index }))
 }
 
+function removeEmptyBlock(card, block, event) {
+  if ((block.content || '').trim()) return
+  event.preventDefault()
+  removeBlock(card, block)
+}
+
+function startTypePress(block) {
+  cancelTypePress()
+  typePressTimer = window.setTimeout(() => openTypeSheet(block), 450)
+}
+
+function cancelTypePress() {
+  if (!typePressTimer) return
+  window.clearTimeout(typePressTimer)
+  typePressTimer = null
+}
+
+function openTypeSheet(block) {
+  cancelTypePress()
+  activeTypeBlock.value = block
+  typeSheetVisible.value = true
+}
+
+function selectBlockType(action) {
+  if (activeTypeBlock.value) {
+    activeTypeBlock.value.type = action.value
+    if (action.value === 'rich_text') {
+      activeTypeBlock.value.content = textToRichHtml(activeTypeBlock.value.content)
+      activeRichBlock.value = activeTypeBlock.value
+    }
+  }
+  typeSheetVisible.value = false
+}
+
+function blockTypeColor(type) {
+  return blockTypeActions.find((item) => item.value === type)?.color || '#1989fa'
+}
+
+function blockPlaceholder(type) {
+  if (type === 'rich_text') return '输入富文本'
+  if (type === 'code_block') return '输入代码'
+  return '输入内容'
+}
+
+function blockFieldStyle(type) {
+  if (type !== 'code_block') return undefined
+  return {
+    fontFamily: 'monospace',
+    background: '#f7f8fa',
+    borderRadius: '6px',
+  }
+}
+
+function blockKey(block) {
+  return block.clientKey || block.id
+}
+
+function syncRichHtml(block, event) {
+  block.content = sanitizeRichHtml(event.currentTarget.innerHTML)
+}
+
+function removeEmptyRichBlock(card, block, event) {
+  if (htmlToText(block.content).trim()) return
+  event.preventDefault()
+  removeBlock(card, block)
+}
+
+function applyRichCommand(command, value = null) {
+  document.execCommand(command, false, value)
+  if (activeRichBlock.value) {
+    const selection = window.getSelection()
+    const node = selection?.anchorNode?.parentElement
+    const editor = node?.closest?.('[contenteditable="true"]')
+    if (editor) activeRichBlock.value.content = sanitizeRichHtml(editor.innerHTML)
+  }
+}
+
+function safeRichHtml(content) {
+  return sanitizeRichHtml(content || '<p><br></p>')
+}
+
+function textToRichHtml(content) {
+  if (!content) return '<p><br></p>'
+  if (/<[a-z][\s\S]*>/i.test(content)) return sanitizeRichHtml(content)
+  return content
+    .split('\n')
+    .map((line) => `<p>${escapeHtml(line) || '<br>'}</p>`)
+    .join('')
+}
+
+function sanitizeRichHtml(html) {
+  const template = document.createElement('template')
+  template.innerHTML = html || ''
+  cleanRichNode(template.content)
+  const cleaned = template.innerHTML.trim()
+  return cleaned || '<p><br></p>'
+}
+
+function cleanRichNode(node) {
+  const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'H3', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'CODE', 'PRE'])
+  Array.from(node.childNodes).forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) return
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      child.remove()
+      return
+    }
+    if (!allowedTags.has(child.tagName)) {
+      child.replaceWith(document.createTextNode(child.textContent || ''))
+      return
+    }
+    Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name))
+    cleanRichNode(child)
+  })
+}
+
+function htmlToText(html) {
+  const template = document.createElement('template')
+  template.innerHTML = html || ''
+  return template.content.textContent || ''
+}
+
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 async function save() {
   syncTitle()
   try {
@@ -177,6 +363,7 @@ function normalizeCards() {
       ...block,
       clientKey: block.clientKey || newClientKey('block'),
       type: block.type || 'plain_text',
+      content: block.type === 'rich_text' ? sanitizeRichHtml(block.content) : (block.content || ''),
       sortOrder: blockIndex,
     })),
   }))
