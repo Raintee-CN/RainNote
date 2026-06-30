@@ -68,12 +68,28 @@
             </template>
             <el-empty v-if="!card.blocks?.length" :image-size="72" description="暂无行块" />
             <el-card v-for="block in card.blocks" :key="block.clientKey || block.id">
-              <el-select v-model="block.type" size="small">
+              <el-select :model-value="block.type" size="small" @update:model-value="changeBlockType(block, $event)">
                 <el-option label="文本" value="plain_text" />
                 <el-option label="富文" value="rich_text" />
                 <el-option label="代码" value="code_block" />
               </el-select>
-              <el-input v-model="block.content" type="textarea" :autosize="{ minRows: 2, maxRows: 8 }" placeholder="写点什么..." />
+              <div v-if="block.type === 'rich_text'" v-html="sanitizeHtml(block.content)" />
+              <el-input
+                v-else-if="block.type === 'code_block'"
+                :model-value="codeText(block.content)"
+                type="textarea"
+                :autosize="{ minRows: 3, maxRows: 12 }"
+                placeholder="输入代码"
+                @update:model-value="updateCodeText(block, $event)"
+              />
+              <el-input
+                v-else
+                :model-value="htmlToText(block.content)"
+                type="textarea"
+                :autosize="{ minRows: 2, maxRows: 8 }"
+                placeholder="写点什么..."
+                @update:model-value="block.content = textToHtml($event, { plain: true })"
+              />
               <el-button text type="danger" @click="removeBlock(card, block)">删除</el-button>
             </el-card>
           <el-button plain type="primary" @click="addBlock(card)">添加行块</el-button>
@@ -99,6 +115,7 @@ import { useConnectionStore } from '../stores/connection'
 import { useNotesStore } from '../stores/notes'
 import { health } from '../api/notes'
 import { errorMessage } from '../api/client'
+import { codeText, htmlToText, normalizeBlockContent, sanitizeHtml, stringifyCodeContent, textToHtml, updateCodeText } from '../utils/blockContent'
 
 const connection = useConnectionStore()
 const notes = useNotesStore()
@@ -175,7 +192,18 @@ function addCard() {
 
 function addBlock(card) {
   card.blocks = card.blocks || []
-  card.blocks.push({ id: '', clientKey: newClientKey('block'), type: 'plain_text', content: '', sortOrder: card.blocks.length })
+  card.blocks.push({ id: '', clientKey: newClientKey('block'), type: 'plain_text', content: '<p><br></p>', sortOrder: card.blocks.length })
+}
+
+function changeBlockType(block, type) {
+  if (type === block.type) return
+  const text = block.type === 'code_block' ? codeText(block.content) : htmlToText(block.content)
+  block.type = type
+  if (type === 'code_block') {
+    block.content = stringifyCodeContent({ language: 'plain', code: text })
+  } else {
+    block.content = textToHtml(text, { plain: type === 'plain_text' })
+  }
 }
 
 async function removeCard(card) {
@@ -253,7 +281,7 @@ function normalizeCards() {
       ...block,
       clientKey: block.clientKey || newClientKey('block'),
       type: block.type || 'plain_text',
-      content: block.content || '',
+      content: normalizeBlockContent(block),
       sortOrder: blockIndex,
     })),
   }))

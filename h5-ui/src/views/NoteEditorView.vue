@@ -46,23 +46,24 @@
           </template>
           <template #title>
             <div
-              v-if="block.type === 'rich_text'"
+              v-if="block.type === 'plain_text' || block.type === 'rich_text'"
               :contenteditable="true"
-              :style="richEditorStyle"
+              :style="block.type === 'rich_text' ? richEditorStyle : plainEditorStyle"
               @focus="activeRichBlock = block"
               @blur="syncRichHtml(block, $event)"
               @input="syncRichHtml(block, $event)"
               @keydown.delete="removeEmptyRichBlock(card, block, $event)"
-              v-html="safeRichHtml(block.content)"
+              v-html="safeHtml(block.content)"
             />
             <van-field
               v-else
-              v-model="block.content"
+              :model-value="codeText(block.content)"
               type="textarea"
               autosize
               rows="2"
               :placeholder="blockPlaceholder(block.type)"
               :style="blockFieldStyle(block.type)"
+              @update:model-value="updateCodeText(block, $event)"
               @keydown.delete="removeEmptyBlock(card, block, $event)"
             />
             <van-cell-group v-if="block.type === 'rich_text'" inset>
@@ -102,6 +103,7 @@ import { onBeforeRouteLeave } from 'vue-router'
 import { showConfirmDialog, showFailToast, showSuccessToast } from 'vant'
 import { useNotesStore } from '../stores/notes'
 import { errorMessage } from '../api/client'
+import { codeText, htmlToText, normalizeBlockContent, sanitizeHtml, stringifyCodeContent, textToHtml, updateCodeText } from '../utils/blockContent'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,6 +119,14 @@ let clientId = 0
 
 const richEditorStyle = {
   minHeight: '44px',
+  outline: 'none',
+  lineHeight: '1.7',
+  wordBreak: 'break-word',
+  whiteSpace: 'normal',
+}
+
+const plainEditorStyle = {
+  minHeight: '38px',
   outline: 'none',
   lineHeight: '1.7',
   wordBreak: 'break-word',
@@ -183,7 +193,7 @@ function addBlock(card) {
     id: '',
     clientKey: newClientKey('block'),
     type: 'plain_text',
-    content: '',
+    content: '<p><br></p>',
     sortOrder: card.blocks.length,
   })
 }
@@ -211,7 +221,7 @@ function removeBlock(card, block) {
 }
 
 function removeEmptyBlock(card, block, event) {
-  if ((block.content || '').trim()) return
+  if ((block.type === 'code_block' ? codeText(block.content) : htmlToText(block.content)).trim()) return
   event.preventDefault()
   removeBlock(card, block)
 }
@@ -236,9 +246,11 @@ function openTypeSheet(block) {
 function selectBlockType(action) {
   if (activeTypeBlock.value) {
     activeTypeBlock.value.type = action.value
-    if (action.value === 'rich_text') {
-      activeTypeBlock.value.content = textToRichHtml(activeTypeBlock.value.content)
+    if (action.value === 'rich_text' || action.value === 'plain_text') {
+      activeTypeBlock.value.content = textToHtml(activeTypeBlock.value.content)
       activeRichBlock.value = activeTypeBlock.value
+    } else if (action.value === 'code_block') {
+      activeTypeBlock.value.content = stringifyCodeContent({ language: 'plain', code: htmlToText(activeTypeBlock.value.content) })
     }
   }
   typeSheetVisible.value = false
@@ -268,7 +280,7 @@ function blockKey(block) {
 }
 
 function syncRichHtml(block, event) {
-  block.content = sanitizeRichHtml(event.currentTarget.innerHTML)
+  block.content = sanitizeHtml(event.currentTarget.innerHTML)
 }
 
 function removeEmptyRichBlock(card, block, event) {
@@ -283,61 +295,12 @@ function applyRichCommand(command, value = null) {
     const selection = window.getSelection()
     const node = selection?.anchorNode?.parentElement
     const editor = node?.closest?.('[contenteditable="true"]')
-    if (editor) activeRichBlock.value.content = sanitizeRichHtml(editor.innerHTML)
+    if (editor) activeRichBlock.value.content = sanitizeHtml(editor.innerHTML)
   }
 }
 
-function safeRichHtml(content) {
-  return sanitizeRichHtml(content || '<p><br></p>')
-}
-
-function textToRichHtml(content) {
-  if (!content) return '<p><br></p>'
-  if (/<[a-z][\s\S]*>/i.test(content)) return sanitizeRichHtml(content)
-  return content
-    .split('\n')
-    .map((line) => `<p>${escapeHtml(line) || '<br>'}</p>`)
-    .join('')
-}
-
-function sanitizeRichHtml(html) {
-  const template = document.createElement('template')
-  template.innerHTML = html || ''
-  cleanRichNode(template.content)
-  const cleaned = template.innerHTML.trim()
-  return cleaned || '<p><br></p>'
-}
-
-function cleanRichNode(node) {
-  const allowedTags = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'H3', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'CODE', 'PRE'])
-  Array.from(node.childNodes).forEach((child) => {
-    if (child.nodeType === Node.TEXT_NODE) return
-    if (child.nodeType !== Node.ELEMENT_NODE) {
-      child.remove()
-      return
-    }
-    if (!allowedTags.has(child.tagName)) {
-      child.replaceWith(document.createTextNode(child.textContent || ''))
-      return
-    }
-    Array.from(child.attributes).forEach((attribute) => child.removeAttribute(attribute.name))
-    cleanRichNode(child)
-  })
-}
-
-function htmlToText(html) {
-  const template = document.createElement('template')
-  template.innerHTML = html || ''
-  return template.content.textContent || ''
-}
-
-function escapeHtml(value) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+function safeHtml(content) {
+  return sanitizeHtml(content || '<p><br></p>')
 }
 
 async function save() {
@@ -363,7 +326,7 @@ function normalizeCards() {
       ...block,
       clientKey: block.clientKey || newClientKey('block'),
       type: block.type || 'plain_text',
-      content: block.type === 'rich_text' ? sanitizeRichHtml(block.content) : (block.content || ''),
+      content: normalizeBlockContent(block),
       sortOrder: blockIndex,
     })),
   }))
