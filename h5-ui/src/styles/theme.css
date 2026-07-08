@@ -151,7 +151,26 @@ textarea {
 }
 
 .note-stack {
-  padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  margin: 0 -6px;
+  padding: 6px 6px calc(86px + env(safe-area-inset-bottom));
+}
+
+.note-stack .van-swipe-cell {
+  padding: 2px 0;
+}
+
+.note-stack .van-swipe-cell__wrapper {
+  overflow: visible;
+}
+
+.note-stack .van-swipe-cell__right {
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.note-stack .van-list__finished-text,
+.note-stack .van-list__loading {
+  margin: 0 6px;
 }
 
 .note-tile {
