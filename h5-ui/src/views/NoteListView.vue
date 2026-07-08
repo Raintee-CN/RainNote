@@ -1,12 +1,19 @@
 <template>
-  <main>
-    <van-nav-bar title="卡片集库">
-      <template #right>
-        <van-button v-if="!connection.embedded" size="small" plain type="primary" @click="router.push('/connect')">连接</van-button>
-      </template>
-    </van-nav-bar>
+  <main class="mobile-shell page-pad">
+    <section class="paper-hero">
+      <p class="eyebrow">RAINNOTE</p>
+      <h1>卡片集</h1>
+      <p class="hero-subtitle">整理你的想法、片段和代码，让每一张卡片都有去处。</p>
+      <div class="toolbar-row">
+        <span class="soft-chip">{{ notes.notes.length }} 个卡片集</span>
+        <span class="soft-chip">纸张工作台</span>
+        <van-button v-if="!connection.embedded" size="small" round plain type="primary" @click="router.push('/connect')">连接</van-button>
+      </div>
+    </section>
 
-    <van-search v-model="keyword" placeholder="搜索标题" />
+    <div class="search-wrap">
+      <van-search v-model="keyword" placeholder="搜索卡片集标题" />
+    </div>
 
     <van-notice-bar v-if="errorText" wrapable :scrollable="false" type="danger">
       {{ errorText }}
@@ -26,18 +33,22 @@
       </van-empty>
     </van-skeleton>
 
-    <van-list v-if="filteredNotes.length">
+    <van-list v-if="filteredNotes.length" class="note-stack">
       <van-swipe-cell v-for="note in filteredNotes" :key="note.id">
-        <van-cell :title="note.title" :label="formatTime(note.updatedAt)" is-link @click="router.push(`/notes/${note.id}`)" />
+        <article class="note-tile" @click="router.push(`/notes/${note.id}`)">
+          <span class="note-pin" />
+          <h3>{{ note.title }}</h3>
+          <p>最近更新：{{ formatTime(note.updatedAt) }}</p>
+        </article>
         <template #right>
           <van-button square type="danger" text="删除" :loading="deletingId === note.id" @click="remove(note.id)" />
         </template>
       </van-swipe-cell>
     </van-list>
 
-    <van-cell-group inset>
-      <van-button block type="primary" @click="openCreateDialog">新建卡片集</van-button>
-    </van-cell-group>
+    <div class="floating-create">
+      <van-button block round type="primary" @click="openCreateDialog">＋ 新建卡片集</van-button>
+    </div>
 
     <van-dialog
       v-model:show="createDialogVisible"

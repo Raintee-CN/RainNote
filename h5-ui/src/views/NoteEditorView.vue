@@ -1,15 +1,19 @@
 <template>
-  <main>
-    <van-nav-bar title="编辑卡片集" left-text="返回" left-arrow @click-left="router.back()">
-      <template #right>
-        <van-button size="small" type="primary" :loading="notes.saving" @click="save">保存</van-button>
-      </template>
-    </van-nav-bar>
+  <main class="mobile-shell editor-page">
+    <header class="editor-topbar">
+      <van-button size="small" round plain type="primary" @click="router.back()">返回</van-button>
+      <div class="editor-topbar-title">
+        <strong>{{ title || '未命名卡片集' }}</strong>
+        <span class="muted">{{ hasUnsavedChanges() ? '有未保存修改' : '已保存' }}</span>
+      </div>
+      <van-button size="small" round type="primary" :loading="notes.saving" @click="save">保存</van-button>
+    </header>
 
     <van-skeleton :loading="notes.loading" title :row="6">
-      <van-cell-group inset title="卡片集信息">
-        <van-field v-model="title" label="标题" placeholder="卡片集标题" @blur="syncTitle" />
-      </van-cell-group>
+      <section class="paper-card editor-title-card">
+        <p class="eyebrow">CARD SET</p>
+        <van-field v-model="title" label="标题" placeholder="卡片集标题" clearable @blur="syncTitle" />
+      </section>
 
       <van-notice-bar v-if="errorText" wrapable :scrollable="false" type="danger">
         {{ errorText }}
@@ -22,14 +26,14 @@
         <van-button round type="primary" @click="router.replace('/notes')">返回卡片集库</van-button>
       </van-empty>
 
-      <van-cell-group v-for="(card, index) in notes.cards" :key="card.clientKey || card.id" inset :title="`卡片 ${index + 1}`">
-        <van-field v-model="card.title" label="标题" placeholder="卡片标题">
-          <template #button>
-            <van-button size="small" type="danger" plain @click="removeCard(card)">删除</van-button>
-          </template>
-        </van-field>
+      <section v-for="(card, index) in notes.cards" :key="card.clientKey || card.id" class="card-editor">
+        <div class="card-title-row">
+          <span>#{{ index + 1 }}</span>
+          <input v-model="card.title" placeholder="卡片标题" />
+          <button class="card-delete-button" type="button" @click="removeCard(card)">删除</button>
+        </div>
         <van-empty v-if="!card.blocks?.length" image-size="72" description="这张卡片还没有内容" />
-        <van-cell v-for="block in card.blocks" :key="block.clientKey || block.id">
+        <van-cell v-for="block in card.blocks" :key="block.clientKey || block.id" class="block-editor">
           <template #icon>
             <van-button
               round
@@ -66,24 +70,24 @@
               @update:model-value="updateCodeText(block, $event)"
               @keydown.delete="removeEmptyBlock(card, block, $event)"
             />
-            <van-cell-group v-if="block.type === 'rich_text'" inset>
+            <div v-if="block.type === 'rich_text'" class="rich-toolbar">
               <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('formatBlock', 'h3')">标题</van-button>
               <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('bold')">加粗</van-button>
               <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('italic')">斜体</van-button>
               <van-button size="mini" plain @mousedown.prevent @click="applyRichCommand('formatBlock', 'blockquote')">引用</van-button>
-            </van-cell-group>
+            </div>
           </template>
         </van-cell>
-          <van-button block plain type="primary" @click="addBlock(card)">添加行块</van-button>
-      </van-cell-group>
+        <van-button block plain type="primary" @click="addBlock(card)">＋ 添加片段</van-button>
+      </section>
 
-      <van-cell-group inset>
-        <van-button block plain type="primary" @click="addCard">添加卡片</van-button>
-      </van-cell-group>
+      <div class="action-area">
+        <van-button block plain round type="primary" @click="addCard">＋ 添加卡片</van-button>
+      </div>
 
-      <van-action-bar>
-        <van-action-bar-button type="primary" :loading="notes.saving" text="保存全部" @click="save" />
-      </van-action-bar>
+      <div class="bottom-action">
+        <van-button block round type="primary" :loading="notes.saving" @click="save">保存全部</van-button>
+      </div>
 
       <van-action-sheet
         v-model:show="typeSheetVisible"
@@ -118,25 +122,29 @@ let typePressTimer = null
 let clientId = 0
 
 const richEditorStyle = {
-  minHeight: '44px',
+  minHeight: '46px',
   outline: 'none',
   lineHeight: '1.7',
   wordBreak: 'break-word',
   whiteSpace: 'normal',
+  padding: '2px 0',
+  color: '#26342f',
 }
 
 const plainEditorStyle = {
-  minHeight: '38px',
+  minHeight: '42px',
   outline: 'none',
   lineHeight: '1.7',
   wordBreak: 'break-word',
   whiteSpace: 'normal',
+  padding: '2px 0',
+  color: '#26342f',
 }
 
 const blockTypeActions = [
-  { name: '普通文本', value: 'plain_text', color: '#1989fa' },
-  { name: '富文本', value: 'rich_text', color: '#07c160' },
-  { name: '代码块', value: 'code_block', color: '#7232dd' },
+  { name: '普通文本', value: 'plain_text', color: '#5fa886' },
+  { name: '富文本', value: 'rich_text', color: '#d99a4e' },
+  { name: '代码块', value: 'code_block', color: '#3f3428' },
 ]
 
 onMounted(async () => {
@@ -270,8 +278,10 @@ function blockFieldStyle(type) {
   if (type !== 'code_block') return undefined
   return {
     fontFamily: 'monospace',
-    background: '#f7f8fa',
-    borderRadius: '6px',
+    background: '#2f281f',
+    color: '#fff0cf',
+    borderRadius: '14px',
+    padding: '10px',
   }
 }
 

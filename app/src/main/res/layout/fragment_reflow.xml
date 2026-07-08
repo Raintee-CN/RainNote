@@ -18,14 +18,15 @@
             android:layout_height="wrap_content"
             android:background="@drawable/bg_paper"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:elevation="2dp"
+            android:padding="18dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="同步中心"
+            android:text="设备互传"
             android:textColor="@color/rn_text"
-            android:textSize="22sp"
+            android:textSize="26sp"
             android:textStyle="bold" />
 
         <TextView
@@ -35,6 +36,7 @@
             android:layout_marginTop="6dp"
             android:maxLines="6"
             android:textColor="@color/rn_text_muted"
+            android:lineSpacingExtra="2dp"
             android:textSize="14sp" />
     </LinearLayout>
 
@@ -42,15 +44,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="@drawable/bg_card"
+        android:background="@drawable/bg_paper"
+        android:elevation="2dp"
         android:orientation="vertical"
         android:padding="12dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="1. 发现设备并发送"
+            android:text="1  准备连接并发送"
             android:textColor="@color/rn_text"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Button
@@ -90,7 +94,7 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:padding="16dp"
-            android:text="还没有发现设备\n点击上方按钮开始扫描"
+            android:text="附近设备会显示在这里\n点击上方按钮开始扫描"
             android:textColor="@color/rn_text_muted"
             android:textSize="15sp" />
     </FrameLayout>
@@ -99,7 +103,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:background="@drawable/bg_card"
+        android:background="@drawable/bg_paper"
+        android:elevation="2dp"
         android:orientation="vertical"
         android:padding="12dp">
 
@@ -107,8 +112,9 @@
             android:id="@+id/text_pending_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="2. 确认接收"
+            android:text="2  确认接收"
             android:textColor="@color/rn_text"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <FrameLayout
